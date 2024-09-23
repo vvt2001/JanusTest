@@ -22,13 +22,15 @@
     <br />
     <button id="createRoom">Create Room</button>
     <button id="joinRoom">Join Room</button>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js" ></script>
 
     <script src="janus.js"></script>
     <script>
         var janus = null;
         var videoRoomPlugin = null;
         var opaqueId = "videoroomtest-" + Janus.randomString(12);
-        var myRoom = 1234; // You can change this room ID
+        var myRoom = 123456; // You can change this room ID
+        let currentWebsocketURL = "ws://125.212.229.11:8188/ws";
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
@@ -39,7 +41,7 @@
             callback: function() {
                 // Initialize Janus session
                 janus = new Janus({
-                    server: "wss://your-janus-server/websocket",
+                    server: currentWebsocketURL,
                     success: function() {
                         // Attach to VideoRoom plugin
                         janus.attach({
