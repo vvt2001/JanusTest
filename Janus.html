@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Janus TextRoom Chat</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js" ></script>
+    <script type="text/javascript" src="janus.js" ></script>
+
+    <style>
+        #messages {
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #messageInput {
+            width: 80%;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        #sendMessage {
+            padding: 10px;
+        }
+        #controls {
+            margin-bottom: 10px;
+        }
+        .inline-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+        .inline-container input[type="text"] {
+            margin-right: 10px;
+            padding: 5px;
+            width: 150px;
+        }
+        .inline-container button {
+            padding: 5px 10px;
+        }
+        #log {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 20px;
+            height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h2>Janus TextRoom Chat</h2>
+    <div class="inline-container">
+        <input type="text" id="webSocketUrlInput" placeholder="WebSocket URL" value="ws://159.65.129.9:8188/ws">
+        <button id="changeWebSocketUrl">Change WebSocket URL</button>
+    </div>
+    <div class="inline-container">
+        <input type="text" id="postUrlInput" placeholder="Post URL" value="http://125.212.229.11:7070/messages">
+        <button id="changePostUrl">Change Post URL</button>
+    </div>
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button id="sendMessage">Send</button>
+
+    <div id="controls">
+        <div class="inline-container">
+            <input type="text" id="createRoomIdInput" placeholder="Room ID">
+            <button id="createRoom">Create Room</button>
+        </div>
+        <div class="inline-container">
+            <input type="text" id="joinRoomIdInput" placeholder="Room ID">
+            <input type="text" id="joinUsernameInput" placeholder="Username">
+            <button id="joinRoom">Join Room</button>
+        </div>
+    </div>
+
+    <div id="log"></div>
+
+    <script>
+        var janus = null;
+        var textroom = null;
+        var dataChannelOpened = false;
+        var messageQueue = [];
+        let currentRoomId;
+        let currentUsername;
+        let currentWebsocketURL = "ws://125.212.229.11:8188/ws";
+        let currentPostURL = "http://125.212.229.11:7070/messages";
+
+        function initializeJanus() {
+            if (janus) {
+                janus.destroy(); // Clean up existing Janus instance
+                janus = null;
+            }
+
+            Janus.init({
+                debug: "all",
+                dependencies: Janus.useDefaultDependencies({ adapter }),
+
+                callback: function() {
+                    console.log("Janus initialized");
+                    janus = new Janus({
+                        server: currentWebsocketURL, // Replace with your Janus server URL
+                        success: function() {
+                            console.log("Connected to Janus server");
+                            janus.attach({
+                                plugin: "janus.plugin.textroom",
+                                opaqueId: '1234',
+                                success: function(pluginHandle) {
+                                    textroom = pluginHandle;
+                                    console.log("TextRoom plugin attached successfully.");
+
+                                    let body = {request: 'setup'};
+                                    textroom.send({message: body});
+
+                                    // Add event listeners for the buttons
+                                    document.getElementById("createRoom").addEventListener("click", createRoom);
+                                    document.getElementById("joinRoom").addEventListener("click", joinRoom);
+                                    document.getElementById("sendMessage").addEventListener("click", sendMessage);
+                                },
+                                error: function(error) {
+                                    console.error("Error attaching TextRoom plugin:", error);
+                                },
+                                ondataopen: function() {
+                                    console.log("Data channel is now open!");
+                                    dataChannelOpened = true;
+                                    processMessageQueue();
+                                },
+                                ondata: function(data) {
+                                    console.log("Received data on DataChannel:", data);
+                                    handleIncomingMessage(JSON.parse(data));
+                                },
+                                onmessage: function(msg, jsep) {
+                                    console.log("Received message from Janus:", msg);
+
+                                    if (jsep) {
+                                        // Answer
+                                        textroom.createAnswer({
+                                            jsep: jsep,
+                                            tracks: [{ type: 'data' }],
+                                            success: function (jsep) {
+                                                let body = { request: 'ack' }
+                                                textroom.send({ message: body, jsep: jsep });
+                                            },
+                                            error: function (error) {
+                                                console.log('WebRTC error:', error);
+                                            }
+                                        });
+                                    }
+                                },
+                                oncleanup: function() {
+                                    console.log("Cleanup notification from Janus.");
+                                }
+                            });
+                        },
+                        error: function(error) {
+                            console.error("Error connecting to Janus server:", error);
+                        },
+                        destroyed: function() {
+                            console.log("Janus session destroyed");
+                        }
+                    });
+                }
+            });
+        }
+
+        function createRoom() {
+            var roomIdInput = document.getElementById("createRoomIdInput").value;
+            if (!roomIdInput) {
+                alert("Please enter a Room ID.");
+                return;
+            }
+
+            const createRoomRequest = {
+                request: 'create',
+                room: parseInt(roomIdInput, 10), // Convert the input to a number
+                description: `Live room ${roomIdInput}`, // Room description
+                publishers: 6, // Maximum number of publishers
+                textroom: "create",
+                transaction: Janus.randomString(12),
+                post: currentPostURL,
+            };
+
+            // textroom.send({
+            //     message: createRoomRequest,
+            //     success: function(response) {
+            //         console.log('Room created', response);
+            //         logMessage(`Room creation success, ID: ${parseInt(roomIdInput, 10)}`);
+            //     },
+            //     error: function(error) {
+            //         console.error('Failed to create room', error);
+            //         logMessage(`Room creation fail, ERROR: ${error.error}`);
+            //     }
+            // });
+            
+            textroom.data({
+                text: JSON.stringify(createRoomRequest),
+                error: function(error){
+                    console.log(error);
+                }
+            })
+            // document.getElementById("createRoomIdInput").value = "";
+        }
+
+        function joinRoom() {
+            var roomIdInput = document.getElementById("joinRoomIdInput").value;
+            var usernameInput = document.getElementById("joinUsernameInput").value;
+            currentRoomId = roomIdInput
+            currentUsername = usernameInput
+            if (!roomIdInput || !usernameInput) {
+                alert("Please enter both Room ID and Username.");
+                return;
+            }
+
+            var joinRequest = {
+                request: "join",
+                room: parseInt(roomIdInput, 10), // Convert the input to a number
+                username: usernameInput,
+                transaction: Janus.randomString(12),
+                textroom: "join",
+            };
+
+            textroom.data({
+                text: JSON.stringify(joinRequest),
+                error: function(error){
+                    console.log(error);
+                }
+            })
+
+            // document.getElementById("joinRoomIdInput").value = "";
+            // document.getElementById("joinUsernameInput").value = "";
+
+        }
+
+        function sendMessage() {
+            var message = document.getElementById("messageInput").value;
+            if (!message) return;
+
+            if (!dataChannelOpened) {
+                console.error("Data channel is not open yet, queueing message.");
+                messageQueue.push(message);
+                return;
+            }
+
+            var request = {
+                textroom: "message",
+                transaction: Janus.randomString(12),
+                room: parseInt(currentRoomId, 10),
+                text: message
+            };
+
+            textroom.data({
+                text: JSON.stringify(request),
+                success: function() {
+                    console.log("Message broadcasted successfully!");
+                },
+                error: function(error) {
+                    console.error("Error broadcasting message:", error);
+                }
+            });
+
+            document.getElementById("messageInput").value = "";
+        }
+
+        initializeJanus();
+
+        function processMessageQueue() {
+            while (messageQueue.length > 0) {
+                var message = messageQueue.shift();
+                sendMessage(message);
+            }
+        }
+
+        function handleIncomingMessage(msg) {
+            console.log("Handling incoming message:", msg);
+
+            if (msg["textroom"] === "message") {
+                var sender = msg["from"];
+                var text = msg["text"];
+                var roomid = msg["room"]
+                var messagesDiv = document.getElementById("messages");
+                messagesDiv.innerHTML += "<p>[<strong>" + sender + ":" + roomid + "</strong>]: " + text + "</p>";
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } else if ((msg["permanent"] === true) || (msg["permanent"] === false)) {
+                console.log(`Room creation success, ID: ${msg['room'].toString()}`);
+                logMessage(`Room creation success, ID: ${msg['room'].toString()}`);
+            } else if (msg["textroom"] === "error") {
+                if (msg.error_code === 418) {
+                    console.log(`Room creation fail, ERROR: ${msg.error}`);
+                    logMessage(`Room creation fail, ERROR: ${msg.error}`);
+                } else if (msg.error_code === 417) {
+                    console.log(`Join room fail, ERROR: ${msg.error}`);
+                    logMessage(`Join room fail, ERROR: ${msg.error}`);
+                } else if (msg.error_code === 421) {
+                    console.log(`Join room fail, ERROR: ${msg.error}`);
+                    logMessage(`Join room fail, ERROR: ${msg.error}`);
+                } else if (msg.error_code === 420) {
+                    console.log(`Join room fail, ERROR: ${msg.error}`);
+                    logMessage(`Join room fail, ERROR: ${msg.error}`);
+                }
+            } else if (msg["textroom"] === "success") {
+                console.log(`Join room success, ID: ${currentRoomId}, Username: ${currentUsername}`);
+                logMessage(`Join room success, ID: ${currentRoomId}, Username: ${currentUsername}`);
+            } else {
+                console.warn("Unexpected message format:", msg);
+            }
+        }
+        
+        function logMessage(message) {
+            var logDiv = document.getElementById("log");
+            logDiv.innerHTML += "<p>" + message + "</p>";
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Function to update WebSocket URL
+        function updateWebSocketURL() {
+            var newURL = document.getElementById("webSocketUrlInput").value;
+            if (!newURL) {
+                alert("Please enter a valid WebSocket URL.");
+                return;
+            }
+
+            currentWebsocketURL = newURL; // Update the global WebSocket URL
+            console.log("WebSocket URL updated to:", currentWebsocketURL);
+
+            initializeJanus();
+        }
+
+        function updatePostURL() {
+            var newURL = document.getElementById("postUrlInput").value;
+            if (!newURL) {
+                alert("Please enter a valid Post URL.");
+                return;
+            }
+
+            currentPostURL = newURL; // Update the global Post URL
+            console.log("Post URL updated to:", currentPostURL);
+        }
+
+        // Add event listener for the "Change URL" button
+        document.getElementById("changeWebSocketUrl").addEventListener("click", updateWebSocketURL);
+        document.getElementById("changePostUrl").addEventListener("click", updatePostURL);
+
+    </script>
+</body>
+</html>
