@@ -77,6 +77,7 @@
 
                                         // Subscribe to existing publishers
                                         if (msg["publishers"]) {
+                                            console.log("hit joined publishers: ", msg)
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
@@ -87,6 +88,7 @@
                                     } else if (event === "event") {
                                         // Handle new publishers joining after you
                                         if (msg["publishers"]) {
+                                            console.log("hit event: ", msg)
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
@@ -147,7 +149,12 @@
                         request: "join",
                         room: myRoom,
                         ptype: "subscriber",
-                        feed: id
+                        streams: [
+                            {
+                                feed: id,
+                            },
+                        // Other streams to subscribe to
+                        ]
                     };
                     remoteFeed.send({ message: subscribe });
                 },
