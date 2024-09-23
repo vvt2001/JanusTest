@@ -3,30 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <title>Janus Video Room</title>
+    <style>
+        #status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #localVideo, #remoteVideo {
+            border: 1px solid #ccc;
+            background-color: #000;
+        }
+    </style>
 </head>
 <body>
     <h1>Janus Video Room</h1>
+    <div id="status">Status: Not connected</div>
     <video id="localVideo" width="320" height="240" autoplay muted></video>
     <video id="remoteVideo" width="320" height="240" autoplay></video>
     <br />
     <button id="createRoom">Create Room</button>
     <button id="joinRoom">Join Room</button>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js" ></script>
 
     <script src="janus.js"></script>
     <script>
         var janus = null;
         var videoRoomPlugin = null;
         var opaqueId = "videoroomtest-" + Janus.randomString(12);
-        var myRoom = 1234567; // You can change this room ID
-        let currentWebsocketURL = "ws://125.212.229.11:8188/ws";
+        var myRoom = 1234; // You can change this room ID
+
+        function updateStatus(message) {
+            document.getElementById("status").innerText = "Status: " + message;
+        }
 
         Janus.init({
             debug: "all",
             callback: function() {
                 // Initialize Janus session
                 janus = new Janus({
-                    server: currentWebsocketURL,
+                    server: "wss://your-janus-server/websocket",
                     success: function() {
                         // Attach to VideoRoom plugin
                         janus.attach({
@@ -34,16 +47,20 @@
                             opaqueId: opaqueId,
                             success: function(pluginHandle) {
                                 videoRoomPlugin = pluginHandle;
-                                console.log("Plugin attached! (" + videoRoomPlugin.getPlugin() + ", id=" + videoRoomPlugin.getId() + ")");
+                                updateStatus("Plugin attached. Ready to create or join a room.");
                             },
                             error: function(error) {
                                 console.error("Error attaching plugin...", error);
+                                updateStatus("Error attaching plugin.");
                             },
                             onmessage: function(msg, jsep) {
                                 console.log("Received message:", msg);
                                 var event = msg["videoroom"];
                                 if (event) {
-                                    if (event === "joined") {
+                                    if (event === "created") {
+                                        updateStatus("Room created successfully. Ready to join.");
+                                    } else if (event === "joined") {
+                                        updateStatus("Successfully joined the room.");
                                         // Publisher/manager created, negotiate WebRTC and attach to local stream
                                         videoRoomPlugin.createOffer({
                                             media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true }, // We're sending audio and video
@@ -54,6 +71,7 @@
                                             },
                                             error: function(error) {
                                                 console.error("WebRTC error:", error);
+                                                updateStatus("WebRTC error.");
                                             }
                                         });
                                     } else if (event === "event") {
@@ -77,17 +95,21 @@
                             },
                             onlocalstream: function(stream) {
                                 Janus.attachMediaStream(document.getElementById("localVideo"), stream);
+                                updateStatus("Local stream started.");
                             },
                             onremotestream: function(stream) {
                                 Janus.attachMediaStream(document.getElementById("remoteVideo"), stream);
+                                updateStatus("Remote stream received.");
                             },
                             oncleanup: function() {
                                 console.log("Cleanup done.");
+                                updateStatus("Cleanup done.");
                             }
                         });
                     },
                     error: function(error) {
                         console.error("Error connecting to Janus:", error);
+                        updateStatus("Error connecting to Janus.");
                     }
                 });
             }
@@ -102,6 +124,7 @@
                 publishers: 6
             };
             videoRoomPlugin.send({ message: createRoom });
+            updateStatus("Creating room...");
         });
 
         // Button to join a room
@@ -113,6 +136,7 @@
                 display: "MyDisplayName"
             };
             videoRoomPlugin.send({ message: register });
+            updateStatus("Joining room...");
         });
     </script>
 </body>
