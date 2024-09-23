@@ -55,10 +55,24 @@
         async function startFacecam() {
             try {
                 // Request access to the user's camera
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
+                // Check if the tracks are present
+                const videoTracks = stream.getVideoTracks();
+                const audioTracks = stream.getAudioTracks();
+
+                console.log("Video Tracks:", videoTracks);
+                console.log("Audio Tracks:", audioTracks);
+
+                if (videoTracks.length === 0 || audioTracks.length === 0) {
+                    console.error("Missing video or audio tracks.");
+                    return;
+                }
+
+                // Attach the stream to the local video element
                 Janus.attachMediaStream(document.getElementById("localVideo"), stream);
 
+                return { videoTrack: videoTracks[0], audioTrack: audioTracks[0] };
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
@@ -91,16 +105,18 @@
                                 console.error("Error attaching plugin...", error);
                                 updateStatus("Error attaching plugin.");
                             },
-                            onmessage: function(msg, jsep) {
+                            onmessage: async function(msg, jsep) {
+                                console.log("event happened: ", msg)
                                 var event = msg["videoroom"];
                                 if (event) {
                                     if (event === "joined") {
                                         myId = msg["id"];
                                         updateStatus("Successfully joined the room. Publishing...");
-                                        publishOwnFeed();
 
                                         // Subscribe to existing publishers
                                         if (msg["publishers"]) {
+                                            console.log("hit publishers: ", msg)
+
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
@@ -109,11 +125,15 @@
                                             }
                                         }
 
-                                        startFacecam();
+                                        // Get the user's video and audio tracks
+                                        const { videoTrack, audioTrack } = await startFacecam();
+
+                                        // You can use these tracks when publishing your own feed
+                                        publishOwnFeed(videoTrack, audioTrack);
                                     } else if (event === "event") {
                                         // Handle new publishers joining after you
                                         if (msg["publishers"]) {
-                                            console.log("hit event: ", msg)
+                                            console.log("hit event new publishers: ", msg)
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
@@ -150,9 +170,13 @@
             }
         });
 
-        function publishOwnFeed() {
+        function publishOwnFeed(videoTrack, audioTrack) {
+            let tracks = [];
+            tracks.push({ type: 'audio', capture: true, recv: false });
+            tracks.push({ type: 'video', capture: true, recv: false });
             videoRoomPlugin.createOffer({
-                media: { audio: true, video: true },
+                tracks: tracks, // Pass the tracks here
+                media: {video: videoTrack, audio: audioTrack},
                 success: function(jsep) {
                     let publish = { request: "publish", audio: true, video: true };
                     videoRoomPlugin.send({ message: publish, jsep: jsep });
