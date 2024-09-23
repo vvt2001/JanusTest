@@ -64,10 +64,10 @@
                 alert('Could not access the camera. Please check your permissions.');
             }
         }
-        async function newFacecam(stream) {
+        function newFacecam(stream) {
             try {
                 // Request access to the user's camera
-                Janus.attachMediaStream(document.getElementById("localVideo"), stream);
+                Janus.attachMediaStream(document.getElementById("remoteVideo"), stream);
 
             } catch (error) {
                 console.error('Error accessing camera:', error);
@@ -101,7 +101,6 @@
 
                                         // Subscribe to existing publishers
                                         if (msg["publishers"]) {
-                                            console.log("hit joined publishers: ", msg)
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
@@ -134,7 +133,8 @@
                                 updateStatus("Local stream started.");
                             },
                             onremotestream: function(stream) {
-                                // This will be handled by newRemoteFeed for each participant
+                                console.log("turned on remote stream")
+                                newFacecam(stream);
                             },
                             oncleanup: function() {
                                 console.log("Cleanup done.");
@@ -186,7 +186,9 @@
                     remoteFeed.send({ message: subscribe });
                 },
                 onmessage: function(msg, jsep) {
+
                     if (jsep) {
+
                         remoteFeed.createAnswer({
                             jsep: jsep,
                             media: { audioSend: false, videoSend: false },
@@ -202,14 +204,8 @@
                     }
                 },
                 onremotestream: function(stream) {
-                    let remoteVideo = document.createElement("video");
-                    remoteVideo.autoplay = true;
-                    remoteVideo.id = "remoteVideo" + id;
-                    remoteVideo.style.width = "320px";
-                    remoteVideo.style.height = "240px";
-                    document.getElementById("remoteVideos").appendChild(remoteVideo);
-                    Janus.attachMediaStream(remoteVideo, stream);
-                    updateStatus("Remote stream received from " + display);
+                    newFacecam(stream);
+
                 },
                 oncleanup: function() {
                     console.log("Cleanup done for remote feed " + id);
