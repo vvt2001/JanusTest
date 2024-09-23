@@ -15,6 +15,10 @@
             height: 240px;
             margin: 10px;
         }
+        #remoteVideos {
+            display: flex;
+            flex-wrap: wrap;
+        }
     </style>
 </head>
 <body>
@@ -26,16 +30,16 @@
     <button id="createRoom">Create Room</button>
     <button id="joinRoom">Join Room</button>
 
-    <!-- Using the specified WebRTC adapter -->
+    <!-- Include WebRTC adapter -->
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js"></script>
     <script src="janus.js"></script>
     <script>
-        var janus = null;
-        var videoRoomPlugin = null;
-        var opaqueId = "videoroomtest-" + Janus.randomString(12);
-        var myRoom = 8734873473; // You can change this room ID
-        var isPublisher = false;
+        let janus = null;
+        let videoRoomPlugin = null;
+        let opaqueId = "videoroomtest-" + Janus.randomString(12);
+        let myRoom = 12312234; // Room ID
         const currentWebsocketURL = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
+        let myId = null;
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
@@ -59,42 +63,31 @@
                                 updateStatus("Error attaching plugin.");
                             },
                             onmessage: function(msg, jsep) {
-                                console.log("Received message from Janus:", msg);
-
                                 var event = msg["videoroom"];
                                 if (event) {
-                                    if (event === "created") {
-                                        updateStatus("Room created successfully. Ready to join.");
-                                    } else if (event === "joined") {
-                                        isPublisher = true;
-                                        updateStatus("Successfully joined the room.");
-                                        videoRoomPlugin.createOffer({
-                                            media: { audio: true, video: true, data: false },
-                                            success: function(jsep) {
-                                                let publish = { request: "publish", audio: true, video: true };
-                                                videoRoomPlugin.send({ message: publish, jsep: jsep });
-                                                console.log("Successfully offer.");
+                                    if (event === "joined") {
+                                        myId = msg["id"];
+                                        updateStatus("Successfully joined the room. Publishing...");
+                                        publishOwnFeed();
 
-                                            },
-                                            error: function(error) {
-                                                console.error("WebRTC error:", error);
-                                                updateStatus("WebRTC error.");
-                                            }
-                                        });
-                                    } else if (event === "event") {
-                                        console.log("process event, current msg: ", msg);
+                                        // Subscribe to existing publishers
                                         if (msg["publishers"]) {
-                                            var list = msg["publishers"];
-                                            for (var f in list) {
-                                                var id = list[f]["id"];
-                                                let subscribe = { request: "join", room: myRoom, ptype: "subscriber", feed: id };
-                                                videoRoomPlugin.send({ message: subscribe });
-                                                console.log("Successfully subscribe.");
+                                            let list = msg["publishers"];
+                                            for (let f in list) {
+                                                let id = list[f]["id"];
+                                                let display = list[f]["display"];
+                                                newRemoteFeed(id, display);
                                             }
-                                        } else if (msg["leaving"]) {
-                                            let id = msg["leaving"];
-                                            console.log("Publisher left:", id);
-                                            // Handle publisher leaving (e.g., remove their video element)
+                                        }
+                                    } else if (event === "event") {
+                                        // Handle new publishers joining after you
+                                        if (msg["publishers"]) {
+                                            let list = msg["publishers"];
+                                            for (let f in list) {
+                                                let id = list[f]["id"];
+                                                let display = list[f]["display"];
+                                                newRemoteFeed(id, display);
+                                            }
                                         }
                                     }
                                 }
@@ -107,15 +100,7 @@
                                 updateStatus("Local stream started.");
                             },
                             onremotestream: function(stream) {
-                                console.log("Remote stream received:", stream);
-                                // Create a new video element for the remote participant
-                                let remoteVideo = document.createElement("video");
-                                remoteVideo.autoplay = true;
-                                remoteVideo.style.width = "320px";
-                                remoteVideo.style.height = "240px";
-                                document.getElementById("remoteVideos").appendChild(remoteVideo);
-                                Janus.attachMediaStream(remoteVideo, stream);
-                                updateStatus("Remote stream received.");
+                                // This will be handled by newRemoteFeed for each participant
                             },
                             oncleanup: function() {
                                 console.log("Cleanup done.");
@@ -131,38 +116,80 @@
             }
         });
 
-        document.getElementById("createRoom").addEventListener("click", function() {
-            let createRoom = {
-                request: "create",
-                room: myRoom,
-                description: "Test Video Room",
-                publishers: 6
-            };
-            videoRoomPlugin.send({ message: createRoom });
-            updateStatus("Creating room...");
+        function publishOwnFeed() {
+            videoRoomPlugin.createOffer({
+                media: { audio: true, video: true },
+                success: function(jsep) {
+                    let publish = { request: "publish", audio: true, video: true };
+                    videoRoomPlugin.send({ message: publish, jsep: jsep });
+                },
+                error: function(error) {
+                    console.error("WebRTC error:", error);
+                    updateStatus("WebRTC error.");
+                }
+            });
+        }
 
-            // videoRoomPlugin.data({
-            //     text: JSON.stringify(createRoom),
-            //     error: function(error){
-            //         console.log(error);
-            //     }
-            // })
+        function newRemoteFeed(id, display) {
+            let remoteFeed = null;
+            janus.attach({
+                plugin: "janus.plugin.videoroom",
+                opaqueId: opaqueId,
+                success: function(pluginHandle) {
+                    remoteFeed = pluginHandle;
+                    let subscribe = {
+                        request: "join",
+                        room: myRoom,
+                        ptype: "subscriber",
+                        feed: id
+                    };
+                    remoteFeed.send({ message: subscribe });
+                },
+                onmessage: function(msg, jsep) {
+                    if (jsep) {
+                        remoteFeed.createAnswer({
+                            jsep: jsep,
+                            media: { audioSend: false, videoSend: false },
+                            success: function(jsep) {
+                                let body = { request: "start", room: myRoom };
+                                remoteFeed.send({ message: body, jsep: jsep });
+                            },
+                            error: function(error) {
+                                console.error("WebRTC error:", error);
+                                updateStatus("WebRTC error.");
+                            }
+                        });
+                    }
+                },
+                onremotestream: function(stream) {
+                    let remoteVideo = document.createElement("video");
+                    remoteVideo.autoplay = true;
+                    remoteVideo.id = "remoteVideo" + id;
+                    remoteVideo.style.width = "320px";
+                    remoteVideo.style.height = "240px";
+                    document.getElementById("remoteVideos").appendChild(remoteVideo);
+                    Janus.attachMediaStream(remoteVideo, stream);
+                    updateStatus("Remote stream received from " + display);
+                },
+                oncleanup: function() {
+                    console.log("Cleanup done for remote feed " + id);
+                }
+            });
+        }
+
+        document.getElementById("createRoom").addEventListener("click", function() {
+            let create = { request: "create", room: myRoom, publishers: 6 };
+            videoRoomPlugin.send({
+                message: create,
+                success: function(result) {
+                    updateStatus("Room created with ID: " + result.room);
+                }
+            });
         });
 
         document.getElementById("joinRoom").addEventListener("click", function() {
-            if (isPublisher) {
-                console.log("Already joined as a publisher.");
-                updateStatus("Already joined as a publisher.");
-                return;
-            }
-            let register = {
-                request: "join",
-                room: myRoom,
-                ptype: "publisher",
-                display: "MyDisplayName"
-            };
-            videoRoomPlugin.send({ message: register });
-            updateStatus("Joining room...");
+            let join = { request: "join", room: myRoom, ptype: "publisher", display: "User-" + Janus.randomString(4) };
+            videoRoomPlugin.send({ message: join });
         });
     </script>
 </body>
