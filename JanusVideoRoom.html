@@ -25,6 +25,8 @@
     <h1>Janus Video Room</h1>
     <div id="status">Status: Not connected</div>
     <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay muted></video>
+
     <div id="remoteVideos"></div>
     <br />
     <button id="createRoom">Create Room</button>
@@ -56,12 +58,22 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
                 Janus.attachMediaStream(document.getElementById("localVideo"), stream);
+
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
             }
         }
+        async function newFacecam(stream) {
+            try {
+                // Request access to the user's camera
+                Janus.attachMediaStream(document.getElementById("localVideo"), stream);
 
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Could not access the camera. Please check your permissions.');
+            }
+        }
         Janus.init({
             debug: "all",
             callback: function() {
@@ -89,6 +101,7 @@
 
                                         // Subscribe to existing publishers
                                         if (msg["publishers"]) {
+                                            console.log("hit joined publishers: ", msg)
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
@@ -101,6 +114,7 @@
                                     } else if (event === "event") {
                                         // Handle new publishers joining after you
                                         if (msg["publishers"]) {
+                                            console.log("hit event: ", msg)
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
@@ -115,7 +129,7 @@
                                 }
                             },
                             onlocalstream: function(stream) {
-                                console.log("Local stream started.");
+                                console.log("turned on local stream")
                                 Janus.attachMediaStream(document.getElementById("localVideo"), stream);
                                 updateStatus("Local stream started.");
                             },
@@ -162,7 +176,12 @@
                         request: "join",
                         room: myRoom,
                         ptype: "subscriber",
-                        feed: id // Subscribe to the specified feed
+                        streams: [
+                            {
+                                feed: id,
+                            },
+                        // Other streams to subscribe to
+                        ]
                     };
                     remoteFeed.send({ message: subscribe });
                 },
