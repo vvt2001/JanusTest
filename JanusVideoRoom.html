@@ -45,7 +45,7 @@
         let janus = null;
         let videoRoomPlugin = null;
         let opaqueId = "videoroomtest-" + Janus.randomString(12);
-        let myRoom = 1234; // Room ID
+        let myRoom = 123469420; // Room ID
         const currentWebsocketURL = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
         let myId = null;
         let subscribers = []; // Store list of subscriber handles
@@ -231,14 +231,11 @@
                     console.log("event happened in new remote feed: ", msg)
 
                     if (jsep) {
-
-                        let tracks = [];
-                        tracks.push({ type: 'audio', capture: true, recv: true });
-                        tracks.push({ type: 'video', capture: true, recv: true });
                         remoteFeed.createAnswer({
                             jsep: jsep,
-                            // tracks: tracks,
-                            // media: { audioSend: false, videoSend: false },
+							tracks: [
+								{ type: 'data' }
+							],
                             success: function(jsep) {
                                 let body = { request: "start", room: myRoom };
                                 remoteFeed.send({ message: body, jsep: jsep });
@@ -272,7 +269,12 @@
         }
 
         document.getElementById("createRoom").addEventListener("click", function() {
-            let create = { request: "create", room: myRoom, publishers: 6 };
+            let create = 
+            {
+                request: "create",
+                room: myRoom,
+                publishers: 6
+            };
             videoRoomPlugin.send({
                 message: create,
                 success: function(result) {
@@ -282,7 +284,14 @@
         });
 
         document.getElementById("joinRoom").addEventListener("click", function() {
-            let join = { request: "join", room: myRoom, ptype: "publisher", display: "User-laptop" };
+            let join = 
+            { 
+                request: "join",
+                room: myRoom,
+                ptype: "publisher",
+                display: "User-laptop" 
+            };
+
             console.log("join request:", join);
             videoRoomPlugin.send({ message: join });
         });
