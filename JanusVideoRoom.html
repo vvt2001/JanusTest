@@ -203,7 +203,12 @@
                         streams: [
                             {
                                 feed: id,
+                                mid: "audio"
                             },
+                            {
+                                feed: id,
+                                mid: "video"
+                            }
                         // Other streams to subscribe to
                         ]
                     };
@@ -268,7 +273,8 @@
         });
 
         document.getElementById("joinRoom").addEventListener("click", function() {
-            let join = { request: "join", room: myRoom, ptype: "publisher", display: "User-" + Janus.randomString(4) };
+            let join = { request: "join", room: myRoom, ptype: "publisher", display: "User-laptop" };
+            console.log("join request:", join);
             videoRoomPlugin.send({ message: join });
         });
 
