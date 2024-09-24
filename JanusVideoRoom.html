@@ -133,7 +133,8 @@
                                 }
                             },
                             onlocaltrack: function(track) {
-                                console.log("HIIIIIIIIIIIIIIIIIIIIIIITTTTTTTTTTTT", track)
+
+                                console.log("hit local", track)
 
                                 localTracks.push(track)
 
@@ -142,7 +143,7 @@
                                 startFacecam(combinedStream);
                                 updateStatus("Local stream started.");
                             },
-                            onremotestrack: function(track) {
+                            onremotetrack: function(track) {
 
                             },
                             oncleanup: function() {
@@ -221,8 +222,8 @@
                         });
                     }
                 },
-                onremotestrack: function(track) {
-                    console.log("HIIIIIIIIIIIIIIIIIIIIIIITTTTTTTTTTTT", track)
+                onremotetrack: function(track) {
+                    console.log("hit remote", track)
 
                     newFacecam(track);
 
