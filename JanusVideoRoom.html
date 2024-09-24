@@ -49,8 +49,7 @@
         let subscribers = []; // Store list of subscriber handles
         let localTracks = [];
         let remoteTracks = [];
-        var acodec = (getQueryStringValue("acodec") !== "" ? getQueryStringValue("acodec") : null);
-        var vcodec = (getQueryStringValue("vcodec") !== "" ? getQueryStringValue("vcodec") : null);
+
         let combinedStream = new MediaStream();
         let combinedRemoteStream = new MediaStream();
 
@@ -180,7 +179,16 @@
                 // media: {video: videoTrack, audio: audioTrack},
                 success: function(jsep) {
 
-                    let publish = { request: "configure", audio: true, video: true };
+                    let publish = { request: "configure", audio: true, video: true,
+                        "streams" : [
+                            {
+                                    "mid" : '0'
+                            },
+                            {
+                                    "mid" : '1'
+                            },
+                    ],
+                     };
                     // You can force a specific codec to use when publishing by using the
                     // audiocodec and videocodec properties, for instance:
                     // 		publish["audiocodec"] = "opus"
@@ -192,10 +200,7 @@
                     // allowed codecs in a room. With respect to the point (2) above,
                     // refer to the text in janus.plugin.videoroom.jcfg for more details.
                     // We allow people to specify a codec via query string, for demo purposes
-                    if(acodec)
-                        publish["audiocodec"] = acodec;
-                    if(vcodec)
-                        publish["videocodec"] = vcodec;
+
                     videoRoomPlugin.send({ message: publish, jsep: jsep });
                 },
                 error: function(error) {
