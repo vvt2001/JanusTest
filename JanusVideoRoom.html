@@ -142,9 +142,15 @@
                                 localTracks.push(track)
 
                                 // Add the video and audio tracks
-                                combinedStream.addTrack(track);
-                                if(localTracks.length >= 2)
+                                if(localTracks.length >= 2){
+                                    console.log("localTracks",localTracks);
+
+                                    combinedStream.addTrack(localTracks[0]);
+                                    combinedStream.addTrack(localTracks[1]);
+                                    console.log("combinedStream",combinedStream);
+
                                     startFacecam(combinedStream);
+                                }
                                 updateStatus("Local stream started.");
                             },
                             onremotetrack: function(track) {
@@ -232,11 +238,17 @@
 
                     remoteTracks.push(track);
                     // Add the video and audio tracks
-                    combinedRemoteStream.addTrack(track);
 
-                    if(remoteTracks.length >= 2)
-                        startFacecam(combinedRemoteStream);
-                    
+                    if(remoteTracks.length >= 2){
+                        console.log("remoteTracks",remoteTracks);
+                        combinedRemoteStream.addTrack(remoteTracks[0]);
+                        combinedRemoteStream.addTrack(remoteTracks[1]);
+                        console.log("combinedRemoteStream",combinedRemoteStream);
+
+                        newFacecam(combinedRemoteStream);
+
+                    }
+
                     updateStatus("Local stream started.");
                 },
                 oncleanup: function() {
