@@ -178,7 +178,19 @@
                 tracks: tracks, // Pass the tracks here
                 // media: {video: videoTrack, audio: audioTrack},
                 success: function(jsep) {
-                    let publish = { request: "publish", audio: true, video: true };
+                    let publish = { 
+                        request: "publish",
+                        descriptions: [
+                            {
+                                mid: "audio",
+                                description: "audio"
+                            },
+                            {
+                                mid: "video",
+                                description: "video"
+                            }
+                        ]
+                    };
                     videoRoomPlugin.send({ message: publish, jsep: jsep });
                 },
                 error: function(error) {
@@ -203,11 +215,11 @@
                         streams: [
                             {
                                 feed: id,
-                                mid: "audio"
+                                mid: '0'
                             },
                             {
                                 feed: id,
-                                mid: "video"
+                                mid: '1'
                             }
                         // Other streams to subscribe to
                         ]
