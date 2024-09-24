@@ -47,11 +47,7 @@
         const currentWebsocketURL = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
         let myId = null;
         let subscribers = []; // Store list of subscriber handles
-        let localTracks = [];
-        let remoteTracks = [];
 
-        let combinedStream = new MediaStream();
-        let combinedRemoteStream = new MediaStream();
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
@@ -136,21 +132,13 @@
                                 }
                             },
                             onlocaltrack: function(track) {
-
                                 console.log("hit local", track)
 
-                                localTracks.push(track)
-
-                                // Add the video and audio tracks
-                                if(localTracks.length >= 2){
-                                    console.log("localTracks",localTracks);
-
-                                    combinedStream.addTrack(localTracks[0]);
-                                    combinedStream.addTrack(localTracks[1]);
-                                    console.log("combinedStream",combinedStream);
-
-                                    startFacecam(combinedStream);
+                                if(track.kind === 'video'){
+                                    let stream = new MediaStream([track]);
+                                    startFacecam(stream);
                                 }
+
                                 updateStatus("Local stream started.");
                             },
                             onremotetrack: function(track) {
@@ -257,15 +245,9 @@
                     remoteTracks.push(track);
                     // Add the video and audio tracks
 
-                    if(remoteTracks.length >= 2){
-                        console.log("remoteTracks",remoteTracks);
-                        combinedRemoteStream.addTrack(remoteTracks[0]);
-                        combinedRemoteStream.addTrack(remoteTracks[1]);
-                        console.log("combinedRemoteStream",combinedRemoteStream);
+                    let stream = new MediaStream([track]);
 
-                        newFacecam(combinedRemoteStream);
-
-                    }
+                    newFacecam(stream);
 
                     updateStatus("Local stream started.");
                 },
