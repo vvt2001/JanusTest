@@ -48,6 +48,8 @@
         let myId = null;
         let subscribers = []; // Store list of subscriber handles
         let localTracks = [];
+        let remoteTracks = [];
+
         let combinedStream = new MediaStream();
         let combinedRemoteStream = new MediaStream();
 
@@ -141,7 +143,8 @@
 
                                 // Add the video and audio tracks
                                 combinedStream.addTrack(track);
-                                startFacecam(combinedStream);
+                                if(localTracks.length >= 2)
+                                    startFacecam(combinedStream);
                                 updateStatus("Local stream started.");
                             },
                             onremotetrack: function(track) {
@@ -211,6 +214,7 @@
                         tracks.push({ type: 'video', capture: true, recv: true });
                         remoteFeed.createAnswer({
                             jsep: jsep,
+                            // tracks: tracks,
                             // media: { audioSend: false, videoSend: false },
                             success: function(jsep) {
                                 let body = { request: "start", room: myRoom };
@@ -226,10 +230,14 @@
                 onremotetrack: function(track) {
                     console.log("hit remote", track)
 
+                    remoteTracks.push(track);
                     // Add the video and audio tracks
                     combinedRemoteStream.addTrack(track);
-                    newFacecam(combinedRemoteStream);
-                    updateStatus("Remote stream started.");
+
+                    if(remoteTracks.length >= 2)
+                        startFacecam(combinedRemoteStream);
+                    
+                    updateStatus("Local stream started.");
                 },
                 oncleanup: function() {
                     console.log("Cleanup done for remote feed " + id);
