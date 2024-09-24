@@ -176,7 +176,7 @@
             tracks.push({ type: 'video', capture: true, recv: false });
             videoRoomPlugin.createOffer({
                 tracks: tracks, // Pass the tracks here
-                media: {video: videoTrack, audio: audioTrack},
+                // media: {video: videoTrack, audio: audioTrack},
                 success: function(jsep) {
                     let publish = { request: "publish", audio: true, video: true };
                     videoRoomPlugin.send({ message: publish, jsep: jsep });
