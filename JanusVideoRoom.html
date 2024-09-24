@@ -49,7 +49,8 @@
         let subscribers = []; // Store list of subscriber handles
         let localTracks = [];
         let remoteTracks = [];
-
+        var acodec = (getQueryStringValue("acodec") !== "" ? getQueryStringValue("acodec") : null);
+        var vcodec = (getQueryStringValue("vcodec") !== "" ? getQueryStringValue("vcodec") : null);
         let combinedStream = new MediaStream();
         let combinedRemoteStream = new MediaStream();
 
