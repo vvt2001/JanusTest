@@ -47,32 +47,17 @@
         const currentWebsocketURL = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
         let myId = null;
         let subscribers = []; // Store list of subscriber handles
+        let localTracks = [];
+        let combinedStream = new MediaStream();
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
         }
 
-        async function startFacecam() {
+        async function startFacecam(stream) {
             try {
-                // Request access to the user's camera
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
-                // Check if the tracks are present
-                const videoTracks = stream.getVideoTracks();
-                const audioTracks = stream.getAudioTracks();
-
-                console.log("Video Tracks:", videoTracks);
-                console.log("Audio Tracks:", audioTracks);
-
-                if (videoTracks.length === 0 || audioTracks.length === 0) {
-                    console.error("Missing video or audio tracks.");
-                    return;
-                }
-
                 // Attach the stream to the local video element
                 Janus.attachMediaStream(document.getElementById("localVideo"), stream);
-
-                return { videoTrack: videoTracks[0], audioTrack: audioTracks[0] };
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
@@ -126,10 +111,10 @@
                                         }
 
                                         // Get the user's video and audio tracks
-                                        const { videoTrack, audioTrack } = await startFacecam();
+                                        // const { videoTrack, audioTrack } = await startFacecam();
 
                                         // You can use these tracks when publishing your own feed
-                                        publishOwnFeed(videoTrack, audioTrack);
+                                        publishOwnFeed();
                                     } else if (event === "event") {
                                         // Handle new publishers joining after you
                                         if (msg["publishers"]) {
@@ -147,14 +132,18 @@
                                     videoRoomPlugin.handleRemoteJsep({ jsep: jsep });
                                 }
                             },
-                            onlocalstream: function(stream) {
-                                console.log("turned on local stream")
-                                Janus.attachMediaStream(document.getElementById("localVideo"), stream);
+                            onlocaltrack: function(track) {
+                                console.log("HIIIIIIIIIIIIIIIIIIIIIIITTTTTTTTTTTT", track)
+
+                                localTracks.push(track)
+
+                                // Add the video and audio tracks
+                                combinedStream.addTrack(track);
+                                startFacecam(combinedStream);
                                 updateStatus("Local stream started.");
                             },
-                            onremotestream: function(stream) {
-                                console.log("turned on remote stream")
-                                newFacecam(stream);
+                            onremotestrack: function(track) {
+
                             },
                             oncleanup: function() {
                                 console.log("Cleanup done.");
@@ -170,7 +159,7 @@
             }
         });
 
-        function publishOwnFeed(videoTrack, audioTrack) {
+        function publishOwnFeed() {
             let tracks = [];
             tracks.push({ type: 'audio', capture: true, recv: false });
             tracks.push({ type: 'video', capture: true, recv: false });
@@ -216,11 +205,10 @@
                     if (jsep) {
 
                         let tracks = [];
-                        tracks.push({ type: 'audio', capture: true, recv: false });
-                        tracks.push({ type: 'video', capture: true, recv: false });
+                        tracks.push({ type: 'audio', capture: true, recv: true });
+                        tracks.push({ type: 'video', capture: true, recv: true });
                         remoteFeed.createAnswer({
                             jsep: jsep,
-                            tracks: tracks,
                             // media: { audioSend: false, videoSend: false },
                             success: function(jsep) {
                                 let body = { request: "start", room: myRoom };
@@ -233,8 +221,10 @@
                         });
                     }
                 },
-                onremotestream: function(stream) {
-                    newFacecam(stream);
+                onremotestrack: function(track) {
+                    console.log("HIIIIIIIIIIIIIIIIIIIIIIITTTTTTTTTTTT", track)
+
+                    newFacecam(track);
 
                 },
                 oncleanup: function() {
