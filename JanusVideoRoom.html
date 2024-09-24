@@ -49,6 +49,7 @@
         let subscribers = []; // Store list of subscriber handles
         let localTracks = [];
         let combinedStream = new MediaStream();
+        let combinedRemoteStream = new MediaStream();
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
@@ -225,8 +226,10 @@
                 onremotetrack: function(track) {
                     console.log("hit remote", track)
 
-                    newFacecam(track);
-
+                    // Add the video and audio tracks
+                    combinedRemoteStream.addTrack(track);
+                    newFacecam(combinedRemoteStream);
+                    updateStatus("Remote stream started.");
                 },
                 oncleanup: function() {
                     console.log("Cleanup done for remote feed " + id);
