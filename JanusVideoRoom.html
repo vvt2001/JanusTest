@@ -215,9 +215,13 @@
 
                     if (jsep) {
 
+                        let tracks = [];
+                        tracks.push({ type: 'audio', capture: true, recv: false });
+                        tracks.push({ type: 'video', capture: true, recv: false });
                         remoteFeed.createAnswer({
                             jsep: jsep,
-                            media: { audioSend: false, videoSend: false },
+                            tracks: tracks,
+                            // media: { audioSend: false, videoSend: false },
                             success: function(jsep) {
                                 let body = { request: "start", room: myRoom };
                                 remoteFeed.send({ message: body, jsep: jsep });
@@ -227,6 +231,18 @@
                                 updateStatus("WebRTC error.");
                             }
                         });
+                    }
+                    if (msg["started"] === "ok"){
+                        let subscribeRequest = {
+                        request: "subscribe",
+                        streams: [
+                            {
+                                feed: id,
+                            },
+                        // Other streams to subscribe to
+                        ]
+                    };
+                    remoteFeed.send({ message: subscribeRequest });
                     }
                 },
                 onremotestream: function(stream) {
