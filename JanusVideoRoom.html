@@ -24,7 +24,9 @@
 <body>
     <h1>Janus Video Room</h1>
     <div id="status">Status: Not connected</div>
+    <audio id="localAudio" autoplay playsinline></audio>
     <video id="localVideo" autoplay playsinline></video>
+    <audio id="remoteAudio" autoplay playsinline></audio>
     <video id="remoteVideo" autoplay playsinline></video>
 
     <div id="remoteVideos"></div>
@@ -67,6 +69,15 @@
                 // Request access to the user's camera
                 Janus.attachMediaStream(document.getElementById("remoteVideo"), stream);
 
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Could not access the camera. Please check your permissions.');
+            }
+        }
+        async function newAudio(stream) {
+            try {
+                // Attach the stream to the local video element
+                Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
@@ -242,13 +253,16 @@
                 onremotetrack: function(track) {
                     console.log("hit remote", track)
 
-                    remoteTracks.push(track);
                     // Add the video and audio tracks
 
                     let stream = new MediaStream([track]);
 
-                    newFacecam(stream);
-
+                    if(track.kind === "audio"){
+                        newAudio(stream)
+                    }
+                    if(track.kind === "video"){
+                        newFacecam(stream);
+                    }
                     updateStatus("Local stream started.");
                 },
                 oncleanup: function() {
