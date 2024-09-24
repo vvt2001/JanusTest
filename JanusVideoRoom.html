@@ -232,18 +232,6 @@
                             }
                         });
                     }
-                    if (msg["started"] === "ok"){
-                        let subscribeRequest = {
-                        request: "subscribe",
-                        streams: [
-                            {
-                                feed: id,
-                            },
-                        // Other streams to subscribe to
-                        ]
-                    };
-                    remoteFeed.send({ message: subscribeRequest });
-                    }
                 },
                 onremotestream: function(stream) {
                     newFacecam(stream);
