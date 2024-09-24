@@ -211,6 +211,8 @@
                 },
                 onmessage: function(msg, jsep) {
 
+                    console.log("event happened in new remote feed: ", msg)
+
                     if (jsep) {
 
                         remoteFeed.createAnswer({
