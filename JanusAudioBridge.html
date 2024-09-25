@@ -80,13 +80,14 @@
                                 }
                             }
                         },
-                        onlocalstream: function(stream) {
+                        onlocaltrack: function(track) {
                             // Handle local audio stream (your microphone)
-                            console.log("Got local stream:", stream);
+                            console.log("Got local track:", track);
                         },
-                        onremotestream: function(stream) {
+                        onremotetrack: function(track) {
                             // Handle remote audio streams (other participants)
-                            console.log("Got remote stream:", stream);
+                            console.log("Got remote track:", track);
+                            let stream = new MediaStream([track]);
                             let audioElement = document.createElement('audio');
                             audioElement.srcObject = stream;
                             audioElement.autoplay = true;
