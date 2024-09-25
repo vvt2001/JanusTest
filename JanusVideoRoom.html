@@ -163,7 +163,7 @@
 
                                 updateStatus("Local stream started.");
                                 document.getElementById("unpublish").addEventListener("click", unpublishOwnFeed);
-                                document.getElementById("mute").addEventListener("click", sendMessage);
+                                document.getElementById("mute").addEventListener("click", toggleMute);
 
                             },
                             onremotetrack: function(track) {
@@ -228,7 +228,7 @@
             else
                 videoRoomPlugin.muteAudio();
             muted = videoRoomPlugin.isAudioMuted();
-            $('#mute').html(muted ? "Unmute" : "Mute");
+            document.getElementById('mute').innerHTML = muted ? "Unmute" : "Mute";
         }
 
         function newRemoteFeed(id, display) {
