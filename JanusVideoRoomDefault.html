@@ -13,14 +13,12 @@
             background-color: #000;
             width: 320px;
             height: 240px;
+            margin: 10px;
         }
         #remoteVideos {
             display: flex;
             flex-wrap: wrap;
         }
-        /* #control-button {
-            margin: 10px;
-        } */
     </style>
 </head>
 <body>
@@ -28,12 +26,6 @@
     <div id="status">Status: Not connected</div>
     <audio id="localAudio" autoplay playsinline></audio>
     <video id="localVideo" autoplay playsinline></video>
-    <br />
-    <div id="control-button">    
-        <button id="publish">Publish</button>
-        <button id="unpublish">Unpublish</button>
-        <button id="mute">Mute</button>
-    </div>
 
 
     <div id="remoteVideos">
@@ -105,7 +97,6 @@
                             success: function(pluginHandle) {
                                 videoRoomPlugin = pluginHandle;
                                 updateStatus("Plugin attached. Ready to create or join a room.");
-                                document.getElementById("publish").addEventListener("click", publishOwnFeed);
                             },
                             error: function(error) {
                                 console.error("Error attaching plugin...", error);
@@ -135,7 +126,7 @@
                                         // const { videoTrack, audioTrack } = await startFacecam();
 
                                         // You can use these tracks when publishing your own feed
-                                        // publishOwnFeed();
+                                        publishOwnFeed();
                                     } else if (event === "event") {
                                         // Handle new publishers joining after you
                                         if (msg["publishers"]) {
@@ -162,9 +153,6 @@
                                 }
 
                                 updateStatus("Local stream started.");
-                                document.getElementById("unpublish").addEventListener("click", unpublishOwnFeed);
-                                document.getElementById("mute").addEventListener("click", sendMessage);
-
                             },
                             onremotetrack: function(track) {
 
@@ -212,23 +200,6 @@
                     updateStatus("WebRTC error.");
                 }
             });
-        }
-
-        function unpublishOwnFeed() {
-            // Unpublish our stream
-            let unpublish = { request: "unpublish" };
-            videoRoomPlugin.send({ message: unpublish });
-        }
-
-        function toggleMute() {
-            let muted = videoRoomPlugin.isAudioMuted();
-            Janus.log((muted ? "Unmuting" : "Muting") + " local stream...");
-            if(muted)
-                videoRoomPlugin.unmuteAudio();
-            else
-                videoRoomPlugin.muteAudio();
-            muted = videoRoomPlugin.isAudioMuted();
-            $('#mute').html(muted ? "Unmute" : "Mute");
         }
 
         function newRemoteFeed(id, display) {
