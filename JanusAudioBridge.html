@@ -13,6 +13,7 @@
     <button id="join">Join Audio Room</button>
     <button id="leave" disabled>Leave Audio Room</button>
 
+    <audio id="remoteAudio" autoplay playsinline></audio>
     <script>
         let server = "ws://125.212.229.11:8188/ws";  // Your Janus server URL
         let janus = null;
@@ -67,8 +68,11 @@
                                     }
 
                                     // Create the offer to start sending audio
+                                    let tracks = [];
+                                    tracks.push({ type: 'audio', capture: true, recv: false });
                                     audiobridge.createOffer({
-                                        media: { video: false },  // Only audio
+                                        tracks: tracks,
+                                        // media: { video: false },  // Only audio
                                         success: function(jsep) {
                                             let publish = { request: "configure", muted: false };
                                             audiobridge.send({ message: publish, jsep: jsep });
@@ -88,10 +92,8 @@
                             // Handle remote audio streams (other participants)
                             console.log("Got remote track:", track);
                             let stream = new MediaStream([track]);
-                            let audioElement = document.createElement('audio');
-                            audioElement.srcObject = stream;
-                            audioElement.autoplay = true;
-                            document.body.appendChild(audioElement);
+                            Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
+
                         },
                         oncleanup: function() {
                             console.log("Cleaning up...");
