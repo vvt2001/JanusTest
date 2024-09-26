@@ -2,120 +2,162 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Janus AudioBridge</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js"></script>
-    <script type="text/javascript" src="janus.js"></script>
+    <title>Janus Audio Bridge</title>
+    <style>
+        #status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        audio {
+            border: 1px solid #ccc;
+            background-color: #000;
+            width: 320px;
+            height: 240px;
+        }
+        #remoteAudio {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        button {
+            margin: 5px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Janus AudioBridge Example</h1>
-    <button id="join">Join Audio Room</button>
-    <button id="leave" disabled>Leave Audio Room</button>
-
-    <audio id="remoteAudio" autoplay playsinline></audio>
+    <h1>Janus Audio Bridge</h1>
+    <div id="status">Status: Not connected</div>
+    <audio id="localAudio" autoplay playsinline></audio>
+    <div id="remoteAudio"></div>
+    <br />
+    <button id="createRoom">Create Room</button>
+    <button id="joinRoom">Join Room</button>
+    
+    <!-- Include WebRTC adapter -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js"></script>
+    <script type="text/javascript" src="janus.js"></script>
     <script>
-        let server = "ws://125.212.229.11:8188/ws";  // Your Janus server URL
         let janus = null;
-        let audiobridge = null;
+        let audioBridgePlugin = null;
         let opaqueId = "audiobridgetest-" + Janus.randomString(12);
-        let room = 1234;  // Room ID
-        let username = "User_" + Math.floor(Math.random() * 1000);
+        let myRoom = 1234567890; // Room ID
+        const janusServer = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
+        let myId = null;
 
-        // Initialize Janus
+        function updateStatus(message) {
+            document.getElementById("status").innerText = "Status: " + message;
+        }
+
+        function handleRemoteAudio(track) {
+            let remoteAudio = document.createElement('audio');
+            remoteAudio.autoplay = true;
+            remoteAudio.controls = true;
+            remoteAudio.srcObject = new MediaStream([track]);
+            document.getElementById("remoteAudio").appendChild(remoteAudio);
+        }
+
         Janus.init({
-            debug: "all", 
+            debug: "all",
             callback: function() {
-                $('#join').one('click', joinAudioRoom);
+                janus = new Janus({
+                    server: janusServer,
+                    success: function() {
+                        janus.attach({
+                            plugin: "janus.plugin.audiobridge",
+                            opaqueId: opaqueId,
+                            success: function(pluginHandle) {
+                                audioBridgePlugin = pluginHandle;
+                                updateStatus("Plugin attached. Ready to create or join a room.");
+                            },
+                            error: function(error) {
+                                console.error("Error attaching plugin...", error);
+                                updateStatus("Error attaching plugin.");
+                            },
+                            onmessage: function(msg, jsep) {
+                                console.log("message received: ", msg);
+                                let event = msg["audiobridge"];
+                                if (event === "joined") {
+                                    myId = msg["id"];
+                                    updateStatus("Successfully joined the room.");
+
+                                    if (msg["participants"]) {
+                                        msg["participants"].forEach(participant => {
+                                            if (participant["id"] !== myId) {
+                                                // Subscribe to remote participants
+                                                console.log("New participant: ", participant);
+                                            }
+                                        });
+                                    }
+
+                                    if (jsep) {
+                                        audioBridgePlugin.handleRemoteJsep({ jsep: jsep });
+                                    }
+                                }
+
+                                if (event === "event") {
+                                    if (msg["participants"]) {
+                                        msg["participants"].forEach(participant => {
+                                            console.log("New participant: ", participant);
+                                        });
+                                    }
+                                }
+                            },
+                            onlocaltrack: function(track) {
+                                console.log("track local received: ", track);
+
+                                if (track.kind === 'audio') {
+                                    let localAudio = document.getElementById('localAudio');
+                                    localAudio.srcObject = new MediaStream([track]);
+                                }
+                            },
+                            onremotetrack: function(track) {
+                                console.log("track remote received: ", track);
+
+                                if (track.kind === 'audio') {
+                                    handleRemoteAudio(track);
+                                }
+                            },
+                            oncleanup: function() {
+                                updateStatus("Cleanup done.");
+                            }
+                        });
+                    },
+                    error: function(error) {
+                        console.error("Error connecting to Janus:", error);
+                        updateStatus("Error connecting to Janus.");
+                    }
+                });
             }
         });
 
-        function joinAudioRoom() {
-            janus = new Janus({
-                server: server,
-                success: function() {
-                    // Attach to AudioBridge plugin
-                    janus.attach({
-                        plugin: "janus.plugin.audiobridge",
-                        opaqueId: opaqueId,
-                        success: function(pluginHandle) {
-                            audiobridge = pluginHandle;
-                            console.log("Plugin attached! (" + audiobridge.getPlugin() + ", id=" + audiobridge.getId() + ")");
-
-                            // Join the audio room
-                            let register = {
-                                request: "join",
-                                room: room,
-                                display: username
-                            };
-                            audiobridge.send({ message: register });
-
-                            // Enable leave button
-                            $('#leave').prop('disabled', false).one('click', leaveAudioRoom);
-                        },
-                        error: function(error) {
-                            console.error("Error attaching plugin...", error);
-                        },
-                        onmessage: function(msg, jsep) {
-                            let event = msg["audiobridge"];
-                            console.log("Got a message:", msg);
-                            if (event) {
-                                if (event === "joined") {
-                                    console.log("Successfully joined room " + msg["room"]);
-                                    // Handle JSEP if provided
-                                    if (jsep) {
-                                        audiobridge.handleRemoteJsep({ jsep: jsep });
-                                    }
-
-                                    // Create the offer to start sending audio
-                                    let tracks = [];
-                                    tracks.push({ type: 'audio', capture: true, recv: false });
-                                    audiobridge.createOffer({
-                                        tracks: tracks,
-                                        // media: { video: false },  // Only audio
-                                        success: function(jsep) {
-                                            let publish = { request: "configure", muted: false };
-                                            audiobridge.send({ message: publish, jsep: jsep });
-                                        },
-                                        error: function(error) {
-                                            console.error("WebRTC error:", error);
-                                        }
-                                    });
-                                }
-                            }
-                        },
-                        onlocaltrack: function(track) {
-                            // Handle local audio stream (your microphone)
-                            console.log("Got local track:", track);
-                        },
-                        onremotetrack: function(track) {
-                            // Handle remote audio streams (other participants)
-                            console.log("Got remote track:", track);
-                            let stream = new MediaStream([track]);
-                            Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
-
-                        },
-                        oncleanup: function() {
-                            console.log("Cleaning up...");
-                        }
-                    });
-                },
-                error: function(error) {
-                    console.error("Error initializing Janus:", error);
-                },
-                destroyed: function() {
-                    console.log("Janus instance destroyed");
+        // Create Room Button
+        document.getElementById("createRoom").addEventListener("click", function() {
+            let create = {
+                request: "create",
+                room: myRoom,
+                description: "My Audio Room",
+                bitrate: 64000, // Set bitrate for audio
+                sampling_rate: 16000,
+                publishers: 6
+            };
+            audioBridgePlugin.send({
+                message: create,
+                success: function(result) {
+                    updateStatus("Room created with ID: " + result.room);
                 }
             });
-        }
+        });
 
-        function leaveAudioRoom() {
-            let leave = { request: "leave" };
-            audiobridge.send({ message: leave });
-            janus.destroy();
-            $('#leave').prop('disabled', true);
-            $('#join').prop('disabled', false).one('click', joinAudioRoom);
-        }
+        // Join Room Button
+        document.getElementById("joinRoom").addEventListener("click", function() {
+            let join = {
+                request: "join",
+                room: myRoom,
+                display: "User-" + opaqueId
+            };
+            audioBridgePlugin.send({
+                message: join
+            });
+        });
     </script>
 </body>
 </html>
