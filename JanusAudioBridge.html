@@ -20,7 +20,7 @@
         let janus = null;
         let audiobridge = null;
         let opaqueId = "audiobridgetest-" + Janus.randomString(12);
-        let room = 1234234324;  // Room ID
+        let room = 12342343434324;  // Room ID
         let username = "User_" + Math.floor(Math.random() * 1000);
         var myid = null;
         var webrtcUp = false;
@@ -40,7 +40,7 @@
                             audiobridge = pluginHandle;
                             console.log("Plugin attached! (" + audiobridge.getPlugin() + ", id=" + audiobridge.getId() + ")");
 
-                            $('#join').one('click', joinAudioRoom);
+                            document.getElementById("join").addEventListener("click", joinAudioRoom);
                         },
                         error: function(error) {
                             console.error("Error attaching plugin...", error);
@@ -89,6 +89,12 @@
                                             });
                                         }
                                     }
+                                } else if(event === "destroyed") {
+                                    // The room has been destroyed
+                                    Janus.warn("The room has been destroyed!");
+                                    bootbox.alert("The room has been destroyed", function() {
+                                        window.location.reload();
+                                    });
                                 }
                             }
                         },
@@ -101,7 +107,6 @@
                             console.log("Got remote track:", track);
                             let stream = new MediaStream([track]);
                             Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
-
                         },
                         oncleanup: function() {
                             console.log("Cleaning up...");
@@ -145,7 +150,7 @@
                 request: "create",
                 room: room,
                 description: "My audio room",
-                audiolevel_event: true,
+                // audiolevel_event: true,
             };
             audiobridge.send({ 
                 message: create,
