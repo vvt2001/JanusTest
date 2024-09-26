@@ -12,7 +12,7 @@
     <h1>Janus AudioBridge Example</h1>
     <button id="create">Create Audio Room</button>
     <button id="join">Join Audio Room</button>
-    <button id="leave" disabled>Leave Audio Room</button>
+    <!-- <button id="leave" disabled>Leave Audio Room</button> -->
 
     <audio id="remoteAudio" autoplay playsinline></audio>
     <script>
@@ -129,16 +129,16 @@
             audiobridge.send({ message: register });
 
             // Enable leave button
-            $('#leave').prop('disabled', false).one('click', leaveAudioRoom);     
+            // $('#leave').prop('disabled', false).one('click', leaveAudioRoom);     
         }
 
-        function leaveAudioRoom() {
-            let leave = { request: "leave" };
-            audiobridge.send({ message: leave });
-            janus.destroy();
-            $('#leave').prop('disabled', true);
-            $('#join').prop('disabled', false).one('click', joinAudioRoom);
-        }
+        // function leaveAudioRoom() {
+        //     let leave = { request: "leave" };
+        //     audiobridge.send({ message: leave });
+        //     janus.destroy();
+        //     $('#leave').prop('disabled', true);
+        //     $('#join').prop('disabled', false).one('click', joinAudioRoom);
+        // }
 
         document.getElementById("create").addEventListener("click", function() {
             let create = { 
