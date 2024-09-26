@@ -10,6 +10,7 @@
 </head>
 <body>
     <h1>Janus AudioBridge Example</h1>
+    <button id="create">Create Audio Room</button>
     <button id="join">Join Audio Room</button>
     <button id="leave" disabled>Leave Audio Room</button>
 
@@ -19,7 +20,7 @@
         let janus = null;
         let audiobridge = null;
         let opaqueId = "audiobridgetest-" + Janus.randomString(12);
-        let room = 1234;  // Room ID
+        let room = 1234234324;  // Room ID
         let username = "User_" + Math.floor(Math.random() * 1000);
         var myid = null;
         var webrtcUp = false;
@@ -28,12 +29,7 @@
         Janus.init({
             debug: "all", 
             callback: function() {
-                $('#join').one('click', joinAudioRoom);
-            }
-        });
-
-        function joinAudioRoom() {
-            janus = new Janus({
+                janus = new Janus({
                 server: server,
                 success: function() {
                     // Attach to AudioBridge plugin
@@ -44,16 +40,7 @@
                             audiobridge = pluginHandle;
                             console.log("Plugin attached! (" + audiobridge.getPlugin() + ", id=" + audiobridge.getId() + ")");
 
-                            // Join the audio room
-                            let register = {
-                                request: "join",
-                                room: room,
-                                display: username
-                            };
-                            audiobridge.send({ message: register });
-
-                            // Enable leave button
-                            $('#leave').prop('disabled', false).one('click', leaveAudioRoom);
+                            $('#join').one('click', joinAudioRoom);
                         },
                         error: function(error) {
                             console.error("Error attaching plugin...", error);
@@ -93,7 +80,7 @@
                                                 success: function(jsep) {
                                                     Janus.debug("Got SDP!", jsep);
                                                     let publish = { request: "configure", muted: false };
-                                                    mixertest.send({ message: publish, jsep: jsep });
+                                                    audiobridge.send({ message: publish, jsep: jsep });
                                                 },
                                                 error: function(error) {
                                                     Janus.error("WebRTC error:", error);
@@ -128,6 +115,21 @@
                     console.log("Janus instance destroyed");
                 }
             });
+
+            }
+        });
+
+        function joinAudioRoom() {
+            // Join the audio room
+            let register = {
+                request: "join",
+                room: room,
+                display: username
+            };
+            audiobridge.send({ message: register });
+
+            // Enable leave button
+            $('#leave').prop('disabled', false).one('click', leaveAudioRoom);     
         }
 
         function leaveAudioRoom() {
@@ -137,6 +139,23 @@
             $('#leave').prop('disabled', true);
             $('#join').prop('disabled', false).one('click', joinAudioRoom);
         }
+
+        document.getElementById("create").addEventListener("click", function() {
+            let create = { 
+                request: "create",
+                room: room,
+                description: "My audio room",
+                audiolevel_event: true,
+            };
+            audiobridge.send({ 
+                message: create,
+                success: function(result) {
+                    console.log("Room created: ", result.room);
+                }
+            
+            });
+        });
+
     </script>
 </body>
 </html>
