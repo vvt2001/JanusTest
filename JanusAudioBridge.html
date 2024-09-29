@@ -10,11 +10,13 @@
 </head>
 <body>
     <h1>Janus AudioBridge Example</h1>
+    <audio id="remoteAudio" autoplay playsinline></audio>
+    <audio id="localAudio" autoplay playsinline></audio>
+
     <button id="create">Create Audio Room</button>
     <button id="join">Join Audio Room</button>
     <!-- <button id="leave" disabled>Leave Audio Room</button> -->
 
-    <audio id="remoteAudio" autoplay playsinline></audio>
     <script>
         let server = "ws://125.212.229.11:8188/ws";  // Your Janus server URL
         let janus = null;
@@ -56,15 +58,16 @@
 
                                         console.log("Successfully joined room " + msg["room"]);
                                         // Handle JSEP if provided
-                                        if(!webrtcUp) {
-                                            webrtcUp = true;
+                                        // if(!webrtcUp) {
+                                        //     webrtcUp = true;
                                             // Publish our stream
                                             audiobridge.createOffer({
                                                 // We only want bidirectional audio
                                                 tracks: [
-                                                    { type: 'audio', capture: true, recv: true },
+                                                    { type: 'audio', capture: true, recv: false },
                                                 ],
                                                 success: function(jsep) {
+                                                    console.log("Got SDP!", jsep);
                                                     Janus.debug("Got SDP!", jsep);
                                                     let publish = { request: "configure", muted: false };
                                                     audiobridge.send({ message: publish, jsep: jsep });
@@ -74,7 +77,7 @@
                                                     bootbox.alert("WebRTC error... " + error.message);
                                                 }
                                             });
-                                        }
+                                        // }
                                     }
                                 } else if(event === "destroyed") {
                                     // The room has been destroyed
@@ -88,6 +91,8 @@
                         onlocaltrack: function(track) {
                             // Handle local audio stream (your microphone)
                             console.log("Got local track:", track);
+                            // let stream = new MediaStream([track]);
+                            // Janus.attachMediaStream(document.getElementById("localAudio"), stream);
                         },
                         onremotetrack: function(track) {
                             // Handle remote audio streams (other participants)
