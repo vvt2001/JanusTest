@@ -64,19 +64,6 @@
                                                 tracks: [
                                                     { type: 'audio', capture: true, recv: true },
                                                 ],
-                                                // customizeSdp: function(jsep) {
-                                                //     if(stereo && jsep.sdp.indexOf("stereo=1") == -1) {
-                                                //         // Make sure that our offer contains stereo too
-                                                //         jsep.sdp = jsep.sdp.replace("useinbandfec=1", "useinbandfec=1;stereo=1");
-                                                //         // Create a spinner waiting for the remote video
-                                                //         $('#mixedaudio').html(
-                                                //             '<div class="text-center">' +
-                                                //             '	<div id="spinner" class="spinner-border" role="status">' +
-                                                //             '		<span class="visually-hidden">Loading...</span>' +
-                                                //             '	</div>' +
-                                                //             '</div>');
-                                                //     }
-                                                // },
                                                 success: function(jsep) {
                                                     Janus.debug("Got SDP!", jsep);
                                                     let publish = { request: "configure", muted: false };
@@ -129,7 +116,7 @@
             let register = {
                 request: "join",
                 room: room,
-                display: username
+                display: username,
             };
             audiobridge.send({ message: register });
 
