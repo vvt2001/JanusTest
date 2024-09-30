@@ -15,13 +15,14 @@
 
     <button id="create">Create Audio Room</button>
     <button id="join">Join Audio Room</button>
+    <button id="participants">Show Number of Participants</button>
     <!-- <button id="leave" disabled>Leave Audio Room</button> -->
 
     <script>
         let server = "ws://125.212.229.11:8188/ws";  // Your Janus server URL
         let janus = null;
         let audiobridge = null;
-        let opaqueId = 1234;
+        let opaqueId = "audiobridgetest-" + Janus.randomString(12);
         let room = 12342343434324;  // Room ID
         let username = "User_" + Math.floor(Math.random() * 1000);
         var myid = null;
@@ -43,6 +44,7 @@
                             console.log("Plugin attached! (" + audiobridge.getPlugin() + ", id=" + audiobridge.getId() + ")");
 
                             document.getElementById("join").addEventListener("click", joinAudioRoom);
+                            document.getElementById("participants").addEventListener("click", showParticipants);
                         },
                         error: function(error) {
                             console.error("Error attaching plugin...", error);
@@ -58,41 +60,29 @@
 
                                         console.log("Successfully joined room " + msg["room"]);
                                         // Handle JSEP if provided
-                                        // if(!webrtcUp) {
-                                        //     webrtcUp = true;
-                                            // Publish our stream
-                                            audiobridge.createOffer({
-                                                // We only want bidirectional audio
-                                                tracks: [
-                                                    { type: 'audio', capture: true, recv: false },
-                                                ],
-                                                success: function(jsep) {
-                                                    console.log("Got SDP!", jsep);
-                                                    Janus.debug("Got SDP!", jsep);
-                                                    let publish = { request: "configure", muted: false };
-                                                    audiobridge.send({ message: publish, jsep: jsep });
-                                                },
-                                                error: function(error) {
-                                                    Janus.error("WebRTC error:", error);
-                                                    bootbox.alert("WebRTC error... " + error.message);
-                                                }
-                                            });
-                                        // }
+                                        audiobridge.createOffer({
+                                            tracks: [
+                                                { type: 'audio', capture: true, recv: false },
+                                            ],
+                                            success: function(jsep) {
+                                                console.log("Got SDP!", jsep);
+                                                let publish = { request: "configure", muted: false, audio: true };
+                                                audiobridge.send({ message: publish, jsep: jsep });
+                                            },
+                                            error: function(error) {
+                                                console.error("WebRTC error:", error);
+                                            }
+                                        });
                                     }
                                 } else if(event === "destroyed") {
                                     // The room has been destroyed
-                                    Janus.warn("The room has been destroyed!");
-                                    bootbox.alert("The room has been destroyed", function() {
-                                        window.location.reload();
-                                    });
+                                    console.warn("The room has been destroyed!");
                                 }
                             }
                         },
                         onlocaltrack: function(track) {
                             // Handle local audio stream (your microphone)
                             console.log("Got local track:", track);
-                            // let stream = new MediaStream([track]);
-                            // Janus.attachMediaStream(document.getElementById("localAudio"), stream);
                         },
                         onremotetrack: function(track) {
                             // Handle remote audio streams (other participants)
@@ -124,18 +114,19 @@
                 display: username,
             };
             audiobridge.send({ message: register });
-
-            // Enable leave button
-            // $('#leave').prop('disabled', false).one('click', leaveAudioRoom);     
         }
 
-        // function leaveAudioRoom() {
-        //     let leave = { request: "leave" };
-        //     audiobridge.send({ message: leave });
-        //     janus.destroy();
-        //     $('#leave').prop('disabled', true);
-        //     $('#join').prop('disabled', false).one('click', joinAudioRoom);
-        // }
+        function showParticipants() {
+            // Request list of participants
+            let list = { request: "listparticipants", room: room };
+            audiobridge.send({
+                message: list,
+                success: function(result) {
+                    let participants = result.participants.length;
+                    alert("Number of participants: " + participants);
+                }
+            });
+        }
 
         document.getElementById("create").addEventListener("click", function() {
             let create = { 
@@ -149,7 +140,6 @@
                 success: function(result) {
                     console.log("Room created: ", result.room);
                 }
-            
             });
         });
 
