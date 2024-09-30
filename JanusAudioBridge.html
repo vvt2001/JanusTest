@@ -61,8 +61,9 @@
                                         console.log("Successfully joined room " + msg["room"]);
                                         // Handle JSEP if provided
                                         audiobridge.createOffer({
-                                            media: { video: false},	// This is an audio only room
-
+                                            tracks: [
+                                                { type: "audio", capture: true, recv: true },
+                                            ],
                                             success: function(jsep) {
                                                 console.log("Got SDP!", jsep);
                                                 let publish = { request: "configure", muted: false };
