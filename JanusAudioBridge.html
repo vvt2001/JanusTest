@@ -24,7 +24,7 @@
     <!-- <button id="leave" disabled>Leave Audio Room</button> -->
 
     <script>
-        let server = "ws://125.212.229.11:8188/ws";  // Your Janus server URL
+        let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
         let janus = null;
         let audiobridge = null;
         let opaqueId = "audiobridgetest-" + Janus.randomString(12);
@@ -57,6 +57,9 @@
                         onmessage: function(msg, jsep) {
                             let event = msg["audiobridge"];
                             console.log("Got a message:", msg);
+                            if(jsep){
+                                audiobridge.handleRemoteJsep(jsep);
+                            }
                             if(event) {
                                 if(event === "joined") {
                                     // Successfully joined, negotiate WebRTC now
