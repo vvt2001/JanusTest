@@ -21,7 +21,7 @@
         let server = "ws://125.212.229.11:8188/ws";  // Your Janus server URL
         let janus = null;
         let audiobridge = null;
-        let opaqueId = "audiobridgetest-" + Janus.randomString(12);
+        let opaqueId = 1234;
         let room = 12342343434324;  // Room ID
         let username = "User_" + Math.floor(Math.random() * 1000);
         var myid = null;
@@ -142,7 +142,7 @@
                 request: "create",
                 room: room,
                 description: "My audio room",
-                // audiolevel_event: true,
+                audiolevel_event: true,
             };
             audiobridge.send({ 
                 message: create,
