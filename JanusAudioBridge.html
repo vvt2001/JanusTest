@@ -90,12 +90,6 @@
                             let stream = new MediaStream([track]);
                             Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
                         },
-                        handleRemoteJsep: function(track) {
-                            // Handle remote audio streams (other participants)
-                            console.log("Got remote track from new source:", track);
-                            let stream = new MediaStream([track]);
-                            Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
-                        },
                         oncleanup: function() {
                             console.log("Cleaning up...");
                         }
