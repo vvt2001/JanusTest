@@ -10,6 +10,11 @@
 </head>
 <body>
     <h1>Janus AudioBridge Example</h1>
+    <!-- Input field for room ID -->
+    <label for="roomId">Room ID:</label>
+    <input type="text" id="roomId" value="12342343434324">
+    
+    <br><br>
     <audio id="remoteAudio" autoplay playsinline></audio>
     <audio id="localAudio" autoplay playsinline></audio>
 
@@ -23,7 +28,7 @@
         let janus = null;
         let audiobridge = null;
         let opaqueId = "audiobridgetest-" + Janus.randomString(12);
-        let room = 12342343434324;  // Room ID
+        let roomId = document.getElementById("roomId").value;
         let username = "User_" + Math.floor(Math.random() * 1000);
         var myid = null;
         var webrtcUp = false;
@@ -107,10 +112,11 @@
         });
 
         function joinAudioRoom() {
+            let roomId = document.getElementById("roomId").value;
             // Join the audio room
             let register = {
                 request: "join",
-                room: room,
+                room: parseInt(roomId),
                 display: username,
             };
             audiobridge.send({ message: register });
@@ -129,9 +135,11 @@
         }
 
         document.getElementById("create").addEventListener("click", function() {
+            let roomId = document.getElementById("roomId").value;
+
             let create = { 
                 request: "create",
-                room: room,
+                room: parseInt(roomId),
                 description: "My audio room",
                 audiolevel_event: true,
             };
