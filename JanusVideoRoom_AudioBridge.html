@@ -146,8 +146,8 @@
             try {
                 const placeholder = placeholders.find(p => p.videoTrackId === track.id);
                 if (placeholder) {
-                    placeholder.isOccupied = true;
-                    placeholder.videoTrackId = track.id;
+                    placeholder.isOccupied = false;
+                    placeholder.videoTrackId = null;
                     clearPlaceholder(placeholder.id);
 
                 } else {
@@ -223,6 +223,7 @@
                                 console.log("hit local", track)
 
                                 if(!on) {
+                                    console.log("stop face cam")
                                     stopFacecam();
                                     return;
                                 }
@@ -324,7 +325,6 @@
 
         function publishOwnFeed() {
             let tracks = [];
-            tracks.push({ type: 'audio', capture: true, recv: false });
             tracks.push({ type: 'video', capture: true, recv: false });
             videoRoomPlugin.createOffer({
                 tracks: tracks, // Pass the tracks here
