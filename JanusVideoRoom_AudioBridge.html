@@ -232,7 +232,6 @@
 
                                 updateStatus("Local stream started.");
                                 document.getElementById("unpublish").addEventListener("click", unpublishOwnFeed);
-                                document.getElementById("mute").addEventListener("click", toggleMute);
 
                             },
                             onremotetrack: function(track) {
@@ -293,6 +292,7 @@
                             onlocaltrack: function(track) {
                                 // Handle local audio stream (your microphone)
                                 console.log("Got local track:", track);
+                                document.getElementById("mute").addEventListener("click", toggleMute);
                             },
                             onremotetrack: function(track) {
                                 // Handle remote audio streams (other participants)
@@ -440,14 +440,27 @@
         }
 
         document.getElementById("createRoom").addEventListener("click", function() {
-            let create = 
+            let createVideoRoom = 
             {
                 request: "create",
                 room: myRoom,
                 publishers: 6
             };
             videoRoomPlugin.send({
-                message: create,
+                message: createVideoRoom,
+                success: function(result) {
+                    updateStatus("Room created with ID: " + result.room);
+                }
+            });
+
+            let createAudioBridge = { 
+                request: "create",
+                room: myRoom,
+                description: "My audio room",
+                audiolevel_event: true,
+            };
+            audiobridgePlugin.send({
+                message: createAudioBridge,
                 success: function(result) {
                     updateStatus("Room created with ID: " + result.room);
                 }
