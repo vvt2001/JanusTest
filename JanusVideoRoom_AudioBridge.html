@@ -72,6 +72,7 @@
             { id: "Video-3", isOccupied: false, videoTrackId: null }, // Placeholder 3
         ];
         let isMuted = true;
+        let username = "User_" + Math.floor(Math.random() * 1000);
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
@@ -250,7 +251,7 @@
                                 audiobridgePlugin = pluginHandle;
                                 console.log("Plugin attached! (" + audiobridgePlugin.getPlugin() + ", id=" + audiobridgePlugin.getId() + ")");
 
-                                document.getElementById("join").addEventListener("click", joinAudioRoom);
+                                document.getElementById("joinRoom").addEventListener("click", joinAudioRoom);
                             },
                             error: function(error) {
                                 console.error("Error attaching plugin...", error);
@@ -275,7 +276,7 @@
                                                 ],
                                                 success: function(jsep) {
                                                     console.log("Got SDP!", jsep);
-                                                    let publish = { request: "configure", muted: false };
+                                                    let publish = { request: "configure", muted: true };
                                                     audiobridgePlugin.send({ message: publish, jsep: jsep });
                                                 },
                                                 error: function(error) {
@@ -435,7 +436,7 @@
                 room: myRoom,
                 display: username,
             };
-            audiobridge.send({ message: register });
+            audiobridgePlugin.send({ message: register });
         }
 
         document.getElementById("createRoom").addEventListener("click", function() {
