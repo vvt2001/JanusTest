@@ -31,13 +31,13 @@
     <div id="remoteVideos">
         <audio id="teacherAudio" autoplay playsinline></audio>
         <video id="teacherVideo" autoplay playsinline></video>
-        <audio id="Audio-1" autoplay playsinline></audio>
         <video id="Video-1" autoplay playsinline></video>
-        <audio id="Audio-2" autoplay playsinline></audio>
         <video id="Video-2" autoplay playsinline></video>
-        <audio id="Audio-3" autoplay playsinline></audio>
         <video id="Video-3" autoplay playsinline></video>
     </div>
+    <div id="remoteAudios">
+    </div>
+
     <br />
     <div id="control-button">    
         <button id="publish">Publish</button>
@@ -66,40 +66,98 @@
         let myId = null;
         let subscribers = []; // Store list of subscriber handles
         let isPublishing = false;
+        const placeholders = [
+            { id: "Video-1", isOccupied: false, videoTrackId: null }, // Placeholder 1
+            { id: "Video-2", isOccupied: false, videoTrackId: null }, // Placeholder 2
+            { id: "Video-3", isOccupied: false, videoTrackId: null }, // Placeholder 3
+        ];
+        let isMuted = true;
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
         }
 
-        async function startFacecam(stream) {
+        function getAvailablePlaceholder() {
+            return placeholders.find(placeholder => !placeholder.isOccupied);
+        }
+
+        function clearPlaceholder(placeholderId) {
+            const placeholderElement = document.getElementById(placeholderId);
+            placeholderElement.srcObject = null; // Clear the video or audio from the element
+        }
+
+        function startFacecam(track) {
             try {
                 isPublishing = true;
+                const placeholder = placeholders.find(p => p.id === "Video-1");
+                if (placeholder) {
+                    placeholder.isOccupied = true;
+                    placeholder.videoTrackId = track.id;
+                    clearPlaceholder(placeholder.id);
+                }
                 // Attach the stream to the local video element
+                var stream = new MediaStream([track]);
                 Janus.attachMediaStream(document.getElementById("Video-1"), stream);
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
             }
         }
-        function newFacecam(stream) {
-            try {
-                // Request access to the user's camera
-                Janus.attachMediaStream(document.getElementById("remoteVideo"), stream);
 
-            } catch (error) {
-                console.error('Error accessing camera:', error);
-                alert('Could not access the camera. Please check your permissions.');
-            }
-        }
-        async function newAudio(stream) {
+        function stopFacecam() {
             try {
-                // Attach the stream to the local video element
-                Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
+                isPublishing = false;
+                const placeholder = placeholders.find(p => p.id === "Video-1");
+                if (placeholder) {
+                    placeholder.isOccupied = false;
+                    placeholder.videoTrackId = null;
+                    clearPlaceholder(placeholder.id);
+                }
+                else {
+                    console.log("No such placeholders!");
+                }
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
             }
         }
+
+        function newRemoteFacecam(track) {
+            try {
+                const availablePlaceholder = getAvailablePlaceholder();
+                if (availablePlaceholder) {
+                    availablePlaceholder.isOccupied = true;
+                    availablePlaceholder.videoTrackId = track.id;
+
+                    // Attach the stream to the remote video element
+                    var stream = new MediaStream([track]);
+                    Janus.attachMediaStream(document.getElementById(availablePlaceholder.id), stream);
+                } else {
+                    console.log("No available placeholders!");
+                }
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Could not access the camera. Please check your permissions.');
+            }
+        }
+
+        function removeRemoteFacecam(track) {
+            try {
+                const placeholder = placeholders.find(p => p.videoTrackId === track.id);
+                if (placeholder) {
+                    placeholder.isOccupied = true;
+                    placeholder.videoTrackId = track.id;
+                    clearPlaceholder(placeholder.id);
+
+                } else {
+                    console.log("No such placeholders!");
+                }
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Could not access the camera. Please check your permissions.');
+            }
+        }
+
         Janus.init({
             debug: "all",
             callback: function() {
@@ -160,12 +218,15 @@
                                     videoRoomPlugin.handleRemoteJsep({ jsep: jsep });
                                 }
                             },
-                            onlocaltrack: function(track) {
+                            onlocaltrack: function(track, on) {
                                 console.log("hit local", track)
 
+                                if(!on) {
+                                    stopFacecam();
+                                    return;
+                                }
                                 if(track.kind === 'video'){
-                                    let stream = new MediaStream([track]);
-                                    startFacecam(stream);
+                                    startFacecam(track);
                                 }
 
                                 updateStatus("Local stream started.");
@@ -235,8 +296,15 @@
                             onremotetrack: function(track) {
                                 // Handle remote audio streams (other participants)
                                 console.log("Got remote track:", track);
+
+                                const audioElement = document.createElement("audio");
+                                audioElement.id = track.id;
+                                audioElement.autoplay = true;
+
+                                document.getElementById("remoteAudios").appendChild(audioElement);
+
                                 let stream = new MediaStream([track]);
-                                Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
+                                Janus.attachMediaStream(document.getElementById(track.id), stream);
                             },
                             oncleanup: function() {
                                 console.log("Cleaning up...");
@@ -263,16 +331,6 @@
                 success: function(jsep) {
                     let publish = { 
                         request: "publish",
-                        // descriptions: [
-                        //     {
-                        //         mid: "0",
-                        //         description: "audio"
-                        //     },
-                        //     {
-                        //         mid: "1",
-                        //         description: "video"
-                        //     }
-                        // ]
                     };
                     
                     videoRoomPlugin.send({ message: publish, jsep: jsep });
@@ -291,14 +349,23 @@
         }
 
         function toggleMute() {
-            let muted = videoRoomPlugin.isAudioMuted();
-            Janus.log((muted ? "Unmuting" : "Muting") + " local stream...");
-            if(muted)
-                videoRoomPlugin.unmuteAudio();
-            else
-                videoRoomPlugin.muteAudio();
-            muted = videoRoomPlugin.isAudioMuted();
-            document.getElementById('mute').innerHTML = muted ? "Unmute" : "Mute";
+            isMuted = !isMuted; // Toggle the mute status
+
+            // Send mute/unmute request to Janus
+            audiobridgePlugin.send({
+                message: {
+                    request: "configure",
+                    muted: isMuted
+                }
+            });
+
+            // You can also log or update the UI based on the mute state
+            if (isMuted) {
+                console.log("Muted");
+            } else {
+                console.log("Unmuted");
+            }
+            document.getElementById('mute').innerHTML = isMuted ? "Unmute" : "Mute";
         }
 
         function newRemoteFeed(id, display) {
@@ -317,7 +384,6 @@
                             {
                                 feed: id,
                             }
-                        // Other streams to subscribe to
                         ]
                     };
                     remoteFeed.send({ message: subscribe });
@@ -343,18 +409,16 @@
                         });
                     }
                 },
-                onremotetrack: function(track) {
+                onremotetrack: function(track, mid, on) {
                     console.log("hit remote", track)
 
-                    // Add the video and audio tracks
-
-                    let stream = new MediaStream([track]);
-
-                    if(track.kind === "audio"){
-                        newAudio(stream)
+                    if (!on){
+                        removeRemoteFacecam(track);
+                        return;
                     }
+                    // Add the video tracks
                     if(track.kind === "video"){
-                        newFacecam(stream);
+                        newRemoteFacecam(track);
                     }
                     updateStatus("Local stream started.");
                 },

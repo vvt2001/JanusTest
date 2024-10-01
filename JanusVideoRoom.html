@@ -67,6 +67,7 @@
 
         async function startFacecam(stream) {
             try {
+                console.log("stream", stream)
                 // Attach the stream to the local video element
                 Janus.attachMediaStream(document.getElementById("localVideo"), stream);
             } catch (error) {
@@ -76,6 +77,8 @@
         }
         function newFacecam(stream) {
             try {
+                console.log("stream", stream)
+
                 // Request access to the user's camera
                 Janus.attachMediaStream(document.getElementById("remoteVideo"), stream);
 
@@ -86,6 +89,8 @@
         }
         async function newAudio(stream) {
             try {
+                console.log("stream", stream)
+
                 // Attach the stream to the local video element
                 Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
             } catch (error) {
