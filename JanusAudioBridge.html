@@ -58,7 +58,7 @@
                             let event = msg["audiobridge"];
                             console.log("Got a message:", msg);
                             if(jsep){
-                                audiobridge.handleRemoteJsep(jsep);
+                                audiobridge.handleRemoteJsep({jsep: jsep});
                             }
                             if(event) {
                                 if(event === "joined") {
