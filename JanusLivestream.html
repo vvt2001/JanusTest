@@ -69,9 +69,9 @@
         let subscribers = []; // Store list of subscriber handles
         let isPublishing = false;
         const placeholders = [
-            { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null }, // Placeholder 1
-            { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null }, // Placeholder 2
-            { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null }, // Placeholder 3
+            { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 1
+            { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 2
+            { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 3
         ];
         const waitingQueue = []
         let isMuted = true;
@@ -120,6 +120,8 @@
                     placeholder.isOccupied = true;
                     placeholder.videoTrackId = track.id;
                     placeholder.videoTrack = track;
+                    placeholder.userId = myId;
+
                 }
                 // Attach the stream to the local video element
                 var stream = new MediaStream([track]);
@@ -138,6 +140,8 @@
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
                     placeholder.videoTrack = null;
+                    placeholder.userId = null;
+
                     clearPlaceholder(placeholder.id);
 
                     if (waitingQueue.length > 0) {
@@ -166,6 +170,7 @@
                     availablePlaceholder.videoTrackId = track.id;
                     availablePlaceholder.videoTrack = track;
                     availablePlaceholder.userId = id;
+
                     // Attach the stream to the remote video element
                     var stream = new MediaStream([track]);
                     Janus.attachMediaStream(document.getElementById(availablePlaceholder.id), stream);
@@ -178,14 +183,15 @@
             }
         }
 
-        function removeRemoteFacecam(track, userId) {
+        function removeRemoteFacecam(userId) {
             try {
-                const placeholder = placeholders.find(p => p.videoTrackId === track.id);
+                const placeholder = placeholders.find(p => p.userId === userId);
 
                 if (placeholder) {
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
                     placeholder.videoTrack = null;
+                    placeholder.userId = null;
 
                     clearPlaceholder(placeholder.id);
 
@@ -344,6 +350,31 @@
                                     } else if(event === "destroyed") {
                                         // The room has been destroyed
                                         console.warn("The room has been destroyed!");
+                                    } else if(event === "talking") {
+                                        var talkingId = msg["id"]
+                                        var placeholder = placeholders.find(p => p.userId === talkingId);
+                                        if(placeholder) {
+                                            placeholder.isTalking = true;
+                                        } else if (isPublishing) {
+                                            var placeholder = placeholders.find(p => p.isTalking === false && p.id !== "Video-1");
+                                            if(placeholder) {
+                                                waitingQueue[waitingQueue.indexOf(talkingId)] = placeholder.userId;
+                                                removeRemoteFacecam(placeholder.userId)
+                                                newRemoteFeed(talkingId)
+                                            }
+                                        } else {
+                                            var placeholder = placeholders.find(p => p.isTalking === false);
+                                            if(placeholder) {
+                                                waitingQueue[waitingQueue.indexOf(talkingId)] = placeholder.userId;
+                                                removeRemoteFacecam(placeholder.userId)
+                                                newRemoteFeed(talkingId)
+                                            }
+                                        }
+                                    } else if(event === "stopped-talking") {
+                                        console.log("someone stopped talking");
+                                        var placeholder = placeholders.find(p => p.userId === msg["id"]);
+                                        if(placeholder)
+                                            placeholder.isTalking = false;
                                     }
                                 }
                             },
@@ -466,7 +497,7 @@
                     console.log("hit remote", track)
 
                     if (!on){
-                        removeRemoteFacecam(track, id);
+                        removeRemoteFacecam(id);
                         return;
                     }
                     if (placeholders.some(p => p.videoTrackId === track.id)){
