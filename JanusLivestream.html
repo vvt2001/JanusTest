@@ -421,6 +421,9 @@
                         removeRemoteFacecam(track);
                         return;
                     }
+                    if (placeholders.some(p => p.videoTrackId === track.id)){
+                        return;
+                    }
                     // Add the video tracks
                     if(track.kind === "video"){
                         newRemoteFacecam(track);
