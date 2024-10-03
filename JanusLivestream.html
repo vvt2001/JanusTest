@@ -113,6 +113,7 @@
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
                     clearPlaceholder(placeholder.id);
+                    console.log("placeholder after stop fc", placeholders);
                 }
                 else {
                     console.log("No such placeholders!");
@@ -125,7 +126,7 @@
 
         function newRemoteFacecam(track) {
             try {
-                console.log("run 3");
+                console.log("placeholder", placeholders);
                 const availablePlaceholder = getAvailablePlaceholder();
                 if (availablePlaceholder) {
                     availablePlaceholder.isOccupied = true;
@@ -215,6 +216,10 @@
                                                 console.log("run 2");
                                                 newRemoteFeed(id, display);
                                             }
+                                        }
+                                        if (msg["unpublished"]) {
+                                            console.log("unpublished", msg)
+                                            stopFacecam();
                                         }
                                     }
                                 }
