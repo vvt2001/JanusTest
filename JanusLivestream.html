@@ -501,7 +501,7 @@
                         removeRemoteFacecam(id);
                         return;
                     }
-                    if (placeholders.some(p => p.videoTrackId === track.id)){
+                    if (placeholders.some(p => p.userId === id) || waitingQueue.includes(id)){
                         return;
                     }
                     // Add the video tracks
