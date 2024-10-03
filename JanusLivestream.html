@@ -116,7 +116,7 @@
                 const placeholder = placeholders.find(p => p.id === "Video-1");
                 if (placeholder) {
                     if(placeholder.isOccupied === true){
-                        newRemoteFacecam(placeholder.videoTrack);
+                        newRemoteFacecam(placeholder.videoTrack, placeholder.userId);
                     }
                     placeholder.isOccupied = true;
                     placeholder.videoTrackId = track.id;
