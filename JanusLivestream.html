@@ -44,10 +44,12 @@
         <button id="unpublish">Unpublish</button>
         <button id="mute">Unmute</button>
     </div>
-    <button id="createRoom">Create Room</button>
+    <input type="text" id="myId" name="myId" required>
     <button id="joinRoom">Join Room</button>
+    <button id="createRoom">Create Room</button>
     <button id="showPublishers">Show Publishers</button>
     <button id="showSubscribers">Show Subscribers</button>
+
 
     <div id="publisherList"></div>
     <div id="subscriberList"></div>
@@ -322,7 +324,6 @@
                                     if(event === "joined") {
                                         // Successfully joined, negotiate WebRTC now
                                         if(msg["id"]) {
-                                            myid = msg["id"];
 
                                             console.log("Successfully joined room " + msg["room"]);
                                             // Handle JSEP if provided
@@ -484,13 +485,21 @@
         }
 
         function joinAudioRoom() {
-            // Join the audio room
-            let register = {
-                request: "join",
-                room: myRoom,
-                display: username,
-            };
-            audiobridgePlugin.send({ message: register });
+            event.preventDefault(); // Prevent form from submitting to a new page
+            myId = document.getElementById('myId').value;
+            if (myId){
+                // Join the audio room
+                let register = {
+                    request: "join",
+                    room: myRoom,
+                    display: username,
+                    id: parseInt(myId),
+                };
+                audiobridgePlugin.send({ message: register });
+            }
+            else {
+                console.log("This field is required!"); // Alert if the field is empty
+            }
         }
 
         document.getElementById("createRoom").addEventListener("click", function() {
@@ -521,17 +530,25 @@
             });
         });
 
-        document.getElementById("joinRoom").addEventListener("click", function() {
-            let join = 
-            { 
-                request: "join",
-                room: myRoom,
-                ptype: "publisher",
-                display: "User-laptop" 
-            };
+        document.getElementById("joinRoom").addEventListener("click", function(event) {
+            event.preventDefault(); // Prevent form from submitting to a new page
+            myId = document.getElementById('myId').value;
+            if (myId){
+                let join = 
+                { 
+                    request: "join",
+                    room: myRoom,
+                    ptype: "publisher",
+                    display: "User-laptop",
+                    id: parseInt(myId),
+                };
 
-            console.log("join request:", join);
-            videoRoomPlugin.send({ message: join });
+                console.log("join request:", join);
+                videoRoomPlugin.send({ message: join });
+            }
+            else {
+                console.log("This field is required!"); // Alert if the field is empty
+            }
         });
 
         document.getElementById("showPublishers").addEventListener("click", function() {
