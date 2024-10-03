@@ -190,8 +190,8 @@
 
         function publishOwnFeed() {
             let tracks = [];
-            tracks.push({ type: 'audio', capture: true, recv: false });
-            tracks.push({ type: 'video', capture: true, recv: false });
+            tracks.push({ type: 'audio', capture: true, recv: false, muted: false });
+            tracks.push({ type: 'video', capture: true, recv: false, muted: false });
             videoRoomPlugin.createOffer({
                 tracks: tracks, // Pass the tracks here
                 // media: {video: videoTrack, audio: audioTrack},

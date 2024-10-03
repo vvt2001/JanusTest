@@ -42,7 +42,7 @@
     <div id="control-button">    
         <button id="publish">Publish</button>
         <button id="unpublish">Unpublish</button>
-        <button id="mute">Mute</button>
+        <button id="mute">Unmute</button>
     </div>
     <button id="createRoom">Create Room</button>
     <button id="joinRoom">Join Room</button>
@@ -125,6 +125,7 @@
 
         function newRemoteFacecam(track) {
             try {
+                console.log("run 3");
                 const availablePlaceholder = getAvailablePlaceholder();
                 if (availablePlaceholder) {
                     availablePlaceholder.isOccupied = true;
@@ -193,6 +194,7 @@
                                             for (let f in list) {
                                                 let id = list[f]["id"];
                                                 let display = list[f]["display"];
+                                                console.log("run 1");
                                                 newRemoteFeed(id, display);
                                             }
                                         }
@@ -210,6 +212,7 @@
                                             for (let f in list) {
                                                 let id = list[f]["id"];
                                                 let display = list[f]["display"];
+                                                console.log("run 2");
                                                 newRemoteFeed(id, display);
                                             }
                                         }
@@ -223,7 +226,7 @@
                                 console.log("hit local", track)
 
                                 if(!on) {
-                                    console.log("stop face cam")
+                                    console.log("stop face cam");
                                     stopFacecam();
                                     return;
                                 }
@@ -297,6 +300,7 @@
                             },
                             onremotetrack: function(track) {
                                 // Handle remote audio streams (other participants)
+                                console.log("checkpoint");
                                 console.log("Got remote track:", track);
 
                                 const audioElement = document.createElement("audio");
