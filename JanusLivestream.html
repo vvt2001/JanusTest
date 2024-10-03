@@ -67,9 +67,9 @@
         let subscribers = []; // Store list of subscriber handles
         let isPublishing = false;
         const placeholders = [
-            { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null }, // Placeholder 1
-            { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null }, // Placeholder 2
-            { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null }, // Placeholder 3
+            { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null }, // Placeholder 1
+            { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null }, // Placeholder 2
+            { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null }, // Placeholder 3
         ];
         const waitingQueue = []
         let isMuted = true;
@@ -136,7 +136,6 @@
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
                     placeholder.videoTrack = null;
-                    placeholder.userId = null;
                     clearPlaceholder(placeholder.id);
 
                     if (waitingQueue.length > 0) {
@@ -177,9 +176,9 @@
             }
         }
 
-        function removeRemoteFacecam(userId) {
+        function removeRemoteFacecam(track, userId) {
             try {
-                const placeholder = placeholders.find(p => p.userId === userId);
+                const placeholder = placeholders.find(p => p.videoTrackId === track.id);
 
                 if (placeholder) {
                     placeholder.isOccupied = false;
@@ -266,10 +265,10 @@
                                             stopFacecam();
                                         }
 
-                                        if (msg["unpublished"] && msg["unpublished"] !== "ok") {
-                                            console.log("other person unpublished", msg)
-                                            removeRemoteFacecam(msg["unpublished"]);
-                                        }
+                                        // if (msg["unpublished"] && msg["unpublished"] !== "ok") {
+                                        //     console.log("other person unpublished", msg)
+                                        //     removeRemoteFacecam(msg["unpublished"]);
+                                        // }
                                     }
                                 }
                                 if (jsep) {
