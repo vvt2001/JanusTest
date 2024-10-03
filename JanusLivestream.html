@@ -217,7 +217,7 @@
                                                 newRemoteFeed(id, display);
                                             }
                                         }
-                                        if (msg["unpublished"]) {
+                                        if (msg["unpublished"] === "ok") {
                                             console.log("unpublished", msg)
                                             stopFacecam();
                                         }
