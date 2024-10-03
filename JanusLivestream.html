@@ -67,10 +67,11 @@
         let subscribers = []; // Store list of subscriber handles
         let isPublishing = false;
         const placeholders = [
-            { id: "Video-1", isOccupied: false, videoTrackId: null }, // Placeholder 1
-            { id: "Video-2", isOccupied: false, videoTrackId: null }, // Placeholder 2
-            { id: "Video-3", isOccupied: false, videoTrackId: null }, // Placeholder 3
+            { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null }, // Placeholder 1
+            { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null }, // Placeholder 2
+            { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null }, // Placeholder 3
         ];
+        const waitingQueue = []
         let isMuted = true;
         let username = "User_" + Math.floor(Math.random() * 1000);
 
@@ -87,14 +88,36 @@
             placeholderElement.srcObject = null; // Clear the video or audio from the element
         }
 
+        function shiftPublishers(startIndex) {
+            for (let i = startIndex; i < placeholders.length - 1; i++) {
+                let nextPlaceholder = placeholders[i + 1];
+                let currentPlaceholder = placeholders[i];
+
+                if (nextPlaceholder.isOccupied) {
+                    newRemoteFacecam(nextPlaceholder.videoTrack);
+
+                    nextPlaceholder.isOccupied = false;
+                    nextPlaceholder.videoTrackId = null;
+                    nextPlaceholder.videoTrack = null;
+
+                    clearPlaceholder(nextPlaceholder.id);
+                } else {
+                    break;
+                }
+            }
+        }
+
         function startFacecam(track) {
             try {
                 isPublishing = true;
                 const placeholder = placeholders.find(p => p.id === "Video-1");
                 if (placeholder) {
+                    if(placeholder.isOccupied === true){
+                        newRemoteFacecam(placeholder.videoTrack);
+                    }
                     placeholder.isOccupied = true;
                     placeholder.videoTrackId = track.id;
-                    clearPlaceholder(placeholder.id);
+                    placeholder.videoTrack = track;
                 }
                 // Attach the stream to the local video element
                 var stream = new MediaStream([track]);
@@ -112,8 +135,17 @@
                 if (placeholder) {
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
+                    placeholder.videoTrack = null;
+                    placeholder.userId = null;
                     clearPlaceholder(placeholder.id);
-                    console.log("placeholder after stop fc", placeholders);
+
+                    if (waitingQueue.length > 0) {
+                        newRemoteFeed(waitingQueue[0]);
+                    }
+
+                    else {
+                        shiftPublishers(placeholders.indexOf(placeholder));
+                    }
                 }
                 else {
                     console.log("No such placeholders!");
@@ -124,19 +156,20 @@
             }
         }
 
-        function newRemoteFacecam(track) {
+        function newRemoteFacecam(track, id) {
             try {
                 console.log("placeholder", placeholders);
                 const availablePlaceholder = getAvailablePlaceholder();
                 if (availablePlaceholder) {
                     availablePlaceholder.isOccupied = true;
                     availablePlaceholder.videoTrackId = track.id;
-
+                    availablePlaceholder.videoTrack = track;
+                    availablePlaceholder.userId = id;
                     // Attach the stream to the remote video element
                     var stream = new MediaStream([track]);
                     Janus.attachMediaStream(document.getElementById(availablePlaceholder.id), stream);
                 } else {
-                    console.log("No available placeholders!");
+                    waitingQueue.push(id);
                 }
             } catch (error) {
                 console.error('Error accessing camera:', error);
@@ -144,14 +177,25 @@
             }
         }
 
-        function removeRemoteFacecam(track) {
+        function removeRemoteFacecam(userId) {
             try {
-                const placeholder = placeholders.find(p => p.videoTrackId === track.id);
+                const placeholder = placeholders.find(p => p.userId === userId);
+
                 if (placeholder) {
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
+                    placeholder.videoTrack = null;
+
                     clearPlaceholder(placeholder.id);
 
+                    if (waitingQueue.length > 0) {
+                        newRemoteFeed(waitingQueue[0]);
+                    }
+                } else if (waitingQueue.includes(userId)) {
+                    const index = waitingQueue.indexOf(userId); // Find the index of the element (30)
+                    if (index !== -1) {
+                        waitingQueue.splice(index, 1); // Remove one element at the found index
+                    }
                 } else {
                     console.log("No such placeholders!");
                 }
@@ -220,6 +264,11 @@
                                         if (msg["unpublished"] === "ok") {
                                             console.log("unpublished", msg)
                                             stopFacecam();
+                                        }
+
+                                        if (msg["unpublished"] && msg["unpublished"] !== "ok") {
+                                            console.log("other person unpublished", msg)
+                                            removeRemoteFacecam(msg["unpublished"]);
                                         }
                                     }
                                 }
@@ -372,7 +421,7 @@
             document.getElementById('mute').innerHTML = isMuted ? "Unmute" : "Mute";
         }
 
-        function newRemoteFeed(id, display) {
+        function newRemoteFeed(id) {
             let remoteFeed = null;
             janus.attach({
                 plugin: "janus.plugin.videoroom",
@@ -417,7 +466,7 @@
                     console.log("hit remote", track)
 
                     if (!on){
-                        removeRemoteFacecam(track);
+                        removeRemoteFacecam(track, id);
                         return;
                     }
                     if (placeholders.some(p => p.videoTrackId === track.id)){
@@ -425,7 +474,7 @@
                     }
                     // Add the video tracks
                     if(track.kind === "video"){
-                        newRemoteFacecam(track);
+                        newRemoteFacecam(track, id);
                     }
                     updateStatus("Local stream started.");
                 },
