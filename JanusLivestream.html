@@ -29,13 +29,13 @@
     <br />
 
     <div id="remoteVideos">
-        <audio id="teacherAudio" autoplay playsinline></audio>
         <video id="teacherVideo" autoplay playsinline></video>
         <video id="Video-1" autoplay playsinline></video>
         <video id="Video-2" autoplay playsinline></video>
         <video id="Video-3" autoplay playsinline></video>
     </div>
     <div id="remoteAudios">
+        <audio id="remoteaudio" autoplay playsinline></audio>
     </div>
 
     <br />
@@ -308,14 +308,8 @@
                                 console.log("checkpoint");
                                 console.log("Got remote track:", track);
 
-                                const audioElement = document.createElement("audio");
-                                audioElement.id = track.id;
-                                audioElement.autoplay = true;
-
-                                document.getElementById("remoteAudios").appendChild(audioElement);
-
                                 let stream = new MediaStream([track]);
-                                Janus.attachMediaStream(document.getElementById(track.id), stream);
+                                Janus.attachMediaStream(document.getElementById("remoteaudio"), stream);
                             },
                             oncleanup: function() {
                                 console.log("Cleaning up...");
