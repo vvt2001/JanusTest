@@ -96,11 +96,12 @@
                 let currentPlaceholder = placeholders[i];
 
                 if (nextPlaceholder.isOccupied) {
-                    newRemoteFacecam(nextPlaceholder.videoTrack);
+                    newRemoteFacecam(nextPlaceholder.videoTrack, nextPlaceholder.userId);
 
                     nextPlaceholder.isOccupied = false;
                     nextPlaceholder.videoTrackId = null;
                     nextPlaceholder.videoTrack = null;
+                    nextPlaceholder.userId = null;
 
                     clearPlaceholder(nextPlaceholder.id);
                 } else {
@@ -505,6 +506,7 @@
                     }
                     // Add the video tracks
                     if(track.kind === "video"){
+                        console.log("id", id);
                         newRemoteFacecam(track, id);
                     }
                     updateStatus("Local stream started.");
