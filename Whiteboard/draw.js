@@ -3,6 +3,7 @@ const context = canvas.getContext("2d");
 var lastPoint;
 
 var nodes = [];
+var isErasing = false; // State for toggling between pen and eraser
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -15,8 +16,16 @@ function draw(data) {
     context.beginPath();
     context.moveTo(data.lastPoint.x, data.lastPoint.y);
     context.lineTo(data.x, data.y);
-    context.strokeStyle = data.color;
-    context.lineWidth = 5;
+
+    if (data.isErasing) {
+      context.globalCompositeOperation = "destination-out"; // Erase mode
+      context.lineWidth = 20; // Adjust eraser size here
+    } else {
+      context.globalCompositeOperation = "source-over"; // Pen mode
+      context.strokeStyle = data.color;
+      context.lineWidth = 5;
+    }
+
     context.lineCap = "round";
     context.stroke();
   }
@@ -37,6 +46,7 @@ function move(e) {
       x: e.offsetX,
       y: e.offsetY,
       color: color || "green",
+      isErasing,
     });
 
     broadcast(
@@ -45,6 +55,7 @@ function move(e) {
         x: e.offsetX,
         y: e.offsetY,
         color: color || "green",
+        isErasing,
       })
     );
 
@@ -61,7 +72,7 @@ window.onmouseup = stopDrawing;
 
 function key(e) {
   if (e.key === "Backspace") {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
   }
 }
 
@@ -102,7 +113,6 @@ const broadcast = (message) => {
 };
 
 async function handleIncomingMessage(msg) {
-  // console.log("msg", JSON.stringify(msg));
   if (msg["textroom"] === "message") {
     let data = JSON.parse(msg["text"]);
     draw(data);
@@ -110,3 +120,19 @@ async function handleIncomingMessage(msg) {
     console.warn("Unexpected message format:", msg);
   }
 }
+
+// Toggle between pen and eraser
+function toggleEraser() {
+  isErasing = !isErasing;
+  if (isErasing) {
+    document.getElementById("eraser").textContent = "Drawing";
+    console.log("Eraser mode activated");
+  } else {
+    document.getElementById("eraser").textContent = "Eraser";
+    console.log("Pen mode activated");
+  }
+}
+
+document.getElementById("eraser").addEventListener("click", () => {
+  toggleEraser();
+});
