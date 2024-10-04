@@ -49,9 +49,9 @@
     <button id="joinRoom">Join Room</button>
     <br />
 
-    <!-- <input type="text" id="otherId" name="otherId" required>
+    <input type="text" id="otherId" name="otherId" required>
     <button id="switchCam">Switch Cam</button>
-    <br /> -->
+    <br />
 
     <button id="createRoom">Create Room</button>
     <button id="showPublishers">Show Publishers</button>
@@ -528,17 +528,17 @@
             });
         }
 
-        // function switchRemoteFeed(id) {
-        //     let switchRequest = {
-        //         request: "switch",
-        //         streams: [
-        //             {
-        //                 feed: id,
-        //             }
-        //         ]
-        //     };
-        //     videoRoomPlugin.send({ message: switchRequest });
-        // }
+        function switchRemoteFeed(id) {
+            let switchRequest = {
+                request: "switch",
+                streams: [
+                    {
+                        feed: id,
+                    }
+                ]
+            };
+            videoRoomPlugin.send({ message: switchRequest });
+        }
 
         function joinAudioRoom() {
             event.preventDefault(); // Prevent form from submitting to a new page
@@ -607,16 +607,16 @@
             }
         });
 
-        // document.getElementById("switchCam").addEventListener("click", function(event) {
-        //     event.preventDefault(); // Prevent form from submitting to a new page
-        //     otherId = document.getElementById('otherId').value;
-        //     if (otherId){
-        //         switchRemoteFeed(otherId);
-        //     }
-        //     else {
-        //         console.log("This field is required!"); // Alert if the field is empty
-        //     }
-        // });
+        document.getElementById("switchCam").addEventListener("click", function(event) {
+            event.preventDefault(); // Prevent form from submitting to a new page
+            otherId = document.getElementById('otherId').value;
+            if (otherId){
+                switchRemoteFeed(otherId);
+            }
+            else {
+                console.log("This field is required!"); // Alert if the field is empty
+            }
+        });
 
         document.getElementById("showPublishers").addEventListener("click", function() {
             videoRoomPlugin.send({
