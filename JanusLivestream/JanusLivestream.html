@@ -33,6 +33,7 @@
         <video id="Video-1" autoplay playsinline></video>
         <video id="Video-2" autoplay playsinline></video>
         <video id="Video-3" autoplay playsinline></video>
+        <!-- <video id="Video-4" autoplay playsinline></video> -->
     </div>
     <div id="remoteAudios">
         <audio id="remoteaudio" autoplay playsinline></audio>
@@ -46,6 +47,12 @@
     </div>
     <input type="text" id="myId" name="myId" required>
     <button id="joinRoom">Join Room</button>
+    <br />
+
+    <!-- <input type="text" id="otherId" name="otherId" required>
+    <button id="switchCam">Switch Cam</button>
+    <br /> -->
+
     <button id="createRoom">Create Room</button>
     <button id="showPublishers">Show Publishers</button>
     <button id="showSubscribers">Show Subscribers</button>
@@ -65,7 +72,7 @@
         let myRoom = 123469420; // Room ID
         const server = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
         // let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
-        let myId = null;
+        let otherId = null;
         let subscribers = []; // Store list of subscriber handles
         let isPublishing = false;
         const placeholders = [
@@ -121,7 +128,7 @@
                     placeholder.isOccupied = true;
                     placeholder.videoTrackId = track.id;
                     placeholder.videoTrack = track;
-                    placeholder.userId = myId;
+                    placeholder.userId = otherId;
 
                 }
                 // Attach the stream to the local video element
@@ -240,7 +247,7 @@
                                 var event = msg["videoroom"];
                                 if (event) {
                                     if (event === "joined") {
-                                        myId = msg["id"];
+                                        otherId = msg["id"];
                                         updateStatus("Successfully joined the room. Publishing...");
 
                                         // Subscribe to existing publishers
@@ -521,16 +528,28 @@
             });
         }
 
+        // function switchRemoteFeed(id) {
+        //     let switchRequest = {
+        //         request: "switch",
+        //         streams: [
+        //             {
+        //                 feed: id,
+        //             }
+        //         ]
+        //     };
+        //     videoRoomPlugin.send({ message: switchRequest });
+        // }
+
         function joinAudioRoom() {
             event.preventDefault(); // Prevent form from submitting to a new page
-            myId = document.getElementById('myId').value;
-            if (myId){
+            otherId = document.getElementById('myId').value;
+            if (otherId){
                 // Join the audio room
                 let register = {
                     request: "join",
                     room: myRoom,
                     display: username,
-                    id: parseInt(myId),
+                    id: parseInt(otherId),
                 };
                 audiobridgePlugin.send({ message: register });
             }
@@ -569,15 +588,15 @@
 
         document.getElementById("joinRoom").addEventListener("click", function(event) {
             event.preventDefault(); // Prevent form from submitting to a new page
-            myId = document.getElementById('myId').value;
-            if (myId){
+            otherId = document.getElementById('myId').value;
+            if (otherId){
                 let join = 
                 { 
                     request: "join",
                     room: myRoom,
                     ptype: "publisher",
                     display: "User-laptop",
-                    id: parseInt(myId),
+                    id: parseInt(otherId),
                 };
 
                 console.log("join request:", join);
@@ -587,6 +606,17 @@
                 console.log("This field is required!"); // Alert if the field is empty
             }
         });
+
+        // document.getElementById("switchCam").addEventListener("click", function(event) {
+        //     event.preventDefault(); // Prevent form from submitting to a new page
+        //     otherId = document.getElementById('otherId').value;
+        //     if (otherId){
+        //         switchRemoteFeed(otherId);
+        //     }
+        //     else {
+        //         console.log("This field is required!"); // Alert if the field is empty
+        //     }
+        // });
 
         document.getElementById("showPublishers").addEventListener("click", function() {
             videoRoomPlugin.send({
