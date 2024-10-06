@@ -47,11 +47,12 @@
     </div>
     <input type="text" id="myId" name="myId" required>
     <button id="joinRoom">Join Room</button>
-    <br />
-
-    <input type="text" id="otherId" name="otherId" required>
     <button id="switchCam">Switch Cam</button>
     <br />
+
+    <!-- <input type="text" id="otherId" name="otherId" required> -->
+    <!-- <button id="switchCam">Switch Cam</button> -->
+    <!-- <br /> -->
 
     <button id="createRoom">Create Room</button>
     <button id="showPublishers">Show Publishers</button>
@@ -194,7 +195,7 @@
         function removeRemoteFacecam(userId) {
             try {
                 const placeholder = placeholders.find(p => p.userId === userId);
-
+                const removingId = placeholder.userId;
                 if (placeholder) {
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
@@ -204,7 +205,7 @@
                     clearPlaceholder(placeholder.id);
 
                     if (waitingQueue.length > 0) {
-                        newRemoteFeed(waitingQueue[0]);
+                        switchRemoteFeed(removingId, waitingQueue[0]);
                     }
 
                     else {
@@ -257,9 +258,13 @@
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
-                                                let display = list[f]["display"];
                                                 console.log("run 1");
-                                                newRemoteFeed(id, display);
+                                                if(getAvailablePlaceholder()){
+                                                    newRemoteFeed(id);
+                                                }
+                                                else{
+                                                    waitingQueue.push(id);
+                                                }
                                             }
                                         }
 
@@ -275,9 +280,13 @@
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
-                                                let display = list[f]["display"];
                                                 console.log("run 2");
-                                                newRemoteFeed(id, display);
+                                                if(getAvailablePlaceholder()){
+                                                    newRemoteFeed(id);
+                                                }
+                                                else{
+                                                    waitingQueue.push(id);
+                                                }                                            
                                             }
                                         }
                                         if (msg["unpublished"] === "ok") {
@@ -370,16 +379,18 @@
                                         } else if (isPublishing) {
                                             var placeholder = placeholders.find(p => p.isTalking === false && p.id !== "Video-1");
                                             if(placeholder) {
-                                                waitingQueue[waitingQueue.indexOf(talkingId)] = placeholder.userId;
-                                                removeRemoteFacecam(placeholder.userId)
-                                                newRemoteFeed(talkingId)
+                                                var oldId = placeholder.userId;
+                                                waitingQueue[waitingQueue.indexOf(talkingId)] = oldId;
+                                                removeRemoteFacecam(oldId)
+                                                switchRemoteFeed(oldId, talkingId)
                                             }
                                         } else {
                                             var placeholder = placeholders.find(p => p.isTalking === false);
                                             if(placeholder) {
+                                                var oldId = placeholder.userId;
                                                 waitingQueue[waitingQueue.indexOf(talkingId)] = placeholder.userId;
-                                                removeRemoteFacecam(placeholder.userId)
-                                                newRemoteFeed(talkingId)
+                                                removeRemoteFacecam(oldId)
+                                                switchRemoteFeed(oldId, talkingId)
                                             }
                                         }
                                     } else if(event === "stopped-talking") {
@@ -528,16 +539,71 @@
             });
         }
 
-        function switchRemoteFeed(id) {
-            let switchRequest = {
-                request: "switch",
-                streams: [
-                    {
-                        feed: id,
+        function switchRemoteFeed(oldId, newId) {
+            let remoteFeed = null;
+            janus.attach({
+                plugin: "janus.plugin.videoroom",
+                opaqueId: opaqueId,
+                success: function(pluginHandle) {
+                    remoteFeed = pluginHandle;
+                    subscribers.push(remoteFeed);
+                    let subscribe = {
+                        request: "update",
+                        subscribe: [
+                            {
+                                feed: newId,
+                            }
+                        ],
+                        unsubscribe: [
+                            {
+                                feed: oldId,
+                            }
+                        ]
+                    };
+                    remoteFeed.send({ message: subscribe });
+                },
+                onmessage: function(msg, jsep) {
+
+                    console.log("event happened in new remote feed: ", msg)
+
+                    if (jsep) {
+                        remoteFeed.createAnswer({
+                            jsep: jsep,
+							tracks: [
+								{ type: 'data' }
+							],
+                            success: function(jsep) {
+                                let body = { request: "start", room: myRoom };
+                                remoteFeed.send({ message: body, jsep: jsep });
+                            },
+                            error: function(error) {
+                                console.error("WebRTC error:", error);
+                                updateStatus("WebRTC error.");
+                            }
+                        });
                     }
-                ]
-            };
-            videoRoomPlugin.send({ message: switchRequest });
+                },
+                onremotetrack: function(track, mid, on) {
+                    console.log("hit remote", track)
+
+                    if (!on){
+                        removeRemoteFacecam(id);
+                        return;
+                    }
+                    if (placeholders.some(p => p.userId === id) || waitingQueue.includes(id)){
+                        return;
+                    }
+                    // Add the video tracks
+                    if(track.kind === "video"){
+                        console.log("id", id);
+                        newRemoteFacecam(track, id);
+                    }
+                    updateStatus("Local stream started.");
+                },
+                oncleanup: function() {
+                    console.log("Cleanup done for remote feed " + id);
+                }
+            });
         }
 
         function joinAudioRoom() {
@@ -607,15 +673,12 @@
             }
         });
 
-        document.getElementById("switchCam").addEventListener("click", function(event) {
-            event.preventDefault(); // Prevent form from submitting to a new page
-            otherId = document.getElementById('otherId').value;
-            if (otherId){
-                switchRemoteFeed(otherId);
-            }
-            else {
-                console.log("This field is required!"); // Alert if the field is empty
-            }
+        document.getElementById("switchCam").addEventListener("click", function() {
+            var oldId = placeholders[1].userId;
+            var newId = waitingQueue[0];
+            placeholders[1].userId = newId;
+            waitingQueue[0] = oldId;
+            switchRemoteFeed(oldId, newId);
         });
 
         document.getElementById("showPublishers").addEventListener("click", function() {
