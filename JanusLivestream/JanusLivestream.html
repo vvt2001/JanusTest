@@ -79,7 +79,7 @@
         const placeholders = [
             { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 1
             { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 2
-            // { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 3
+            { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 3
         ];
         const waitingQueue = []
         let isMuted = true;
@@ -675,9 +675,12 @@
 
         document.getElementById("switchCam").addEventListener("click", function() {
             var oldId = placeholders[1].userId;
-            var newId = waitingQueue[0];
-            placeholders[1].userId = newId;
-            waitingQueue[0] = oldId;
+            var newId = placeholders[2].userId;
+            var oldPlaceholder = placeholders[1];
+            var newPlaceholder = placeholders[2];
+
+            placeholders[1].userId = newPlaceholder;
+            placeholders[2].userId = oldPlaceholder;
             switchRemoteFeed(oldId, newId);
         });
 
