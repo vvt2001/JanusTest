@@ -540,13 +540,11 @@
         }
 
         function switchRemoteFeed(oldId, newId) {
-            let remoteFeed = null;
             janus.attach({
                 plugin: "janus.plugin.videoroom",
                 opaqueId: opaqueId,
                 success: function(pluginHandle) {
-                    remoteFeed = pluginHandle;
-                    subscribers.push(remoteFeed);
+                    videoRoomPlugin = pluginHandle;
                     let subscribe = {
                         request: "update",
                         subscribe: [
@@ -560,21 +558,21 @@
                             }
                         ]
                     };
-                    remoteFeed.send({ message: subscribe });
+                    videoRoomPlugin.send({ message: subscribe });
                 },
                 onmessage: function(msg, jsep) {
 
                     console.log("event happened in new remote feed: ", msg)
 
                     if (jsep) {
-                        remoteFeed.createAnswer({
+                        videoRoomPlugin.createAnswer({
                             jsep: jsep,
 							tracks: [
 								{ type: 'data' }
 							],
                             success: function(jsep) {
                                 let body = { request: "start", room: myRoom };
-                                remoteFeed.send({ message: body, jsep: jsep });
+                                videoRoomPlugin.send({ message: body, jsep: jsep });
                             },
                             error: function(error) {
                                 console.error("WebRTC error:", error);
@@ -623,6 +621,24 @@
                 console.log("This field is required!"); // Alert if the field is empty
             }
         }
+
+        function switchRemoteDisplay(oldId, newId) {
+            let subscribe = {
+                request: "update",
+                subscribe: [
+                    {
+                        feed: newId,
+                    }
+                ],
+                unsubscribe: [
+                    {
+                        feed: oldId,
+                    }
+                ]
+            };
+            videoRoomPlugin.send({ message: subscribe });
+        }
+
 
         document.getElementById("createRoom").addEventListener("click", function() {
             let createVideoRoom = 
@@ -681,7 +697,7 @@
 
             placeholders[1].userId = newPlaceholder;
             placeholders[2].userId = oldPlaceholder;
-            switchRemoteFeed(oldId, newId);
+            switchRemoteDisplay(oldId, newId);
         });
 
         document.getElementById("showPublishers").addEventListener("click", function() {
