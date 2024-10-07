@@ -212,6 +212,8 @@
                 const placeholder = placeholders.find(p => p.userId === userId);
                 const removingId = placeholder.userId;
                 if (placeholder) {
+                    cleanupRemoteFeed(placeholder.remoteFeedPugin);
+
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
                     placeholder.videoTrack = null;
@@ -506,11 +508,12 @@
         }
 
         function newRemoteFeed(id, index) {
+            var remotePlugin = null;
             janus.attach({
                 plugin: "janus.plugin.videoroom",
                 opaqueId: opaqueId,
                 success: function(pluginHandle) {
-                    placeholders[index].remoteFeedPugin = pluginHandle;
+                    remotePlugin = pluginHandle;
                     subscribers.push(pluginHandle);
                     let subscribe = {
                         request: "join",
@@ -522,14 +525,14 @@
                             }
                         ]
                     };
-                    placeholders[index].remoteFeedPugin.send({ message: subscribe });
+                    remotePlugin.send({ message: subscribe });
                 },
                 onmessage: function(msg, jsep) {
 
                     console.log("event happened in new remote feed: ", msg)
 
                     if (jsep) {
-                        placeholders[index].remoteFeedPugin.createAnswer({
+                        remotePlugin.createAnswer({
                             jsep: jsep,
 							tracks: [
 								{ type: 'data' }
@@ -558,7 +561,7 @@
                     // Add the video tracks
                     if(track.kind === "video"){
                         console.log("id", id);
-                        newRemoteFacecam(track, id);
+                        newRemoteFacecam(track, id, remotePlugin);
                     }
                     updateStatus("Local stream started.");
                 },
