@@ -279,7 +279,7 @@
                                 updateStatus("Error attaching plugin.");
                             },
                             onmessage: async function(msg, jsep) {
-                                console.log("event happened: ", msg)
+                                console.log("event happened in local plugin: ", msg)
                                 var event = msg["videoroom"];
                                 if (event) {
                                     if (event === "joined") {
@@ -328,9 +328,15 @@
                                                 }                                         
                                             }
                                         }
+
                                         if (msg["unpublished"] === "ok") {
                                             console.log("unpublished", msg)
                                             stopFacecam();
+                                        }
+
+                                        if (Number.isFinite(msg["unpublished"])) {
+                                            console.log("someone unpublished", msg)
+                                            removeRemoteFacecam(msg["unpublished"]);
                                         }
                                     }
                                 }
@@ -377,7 +383,7 @@
                             },
                             onmessage: function(msg, jsep) {
                                 let event = msg["audiobridge"];
-                                console.log("Got a message:", msg);
+                                console.log("Got a message in audio bridge:", msg);
                                 if(jsep){
                                     audiobridgePlugin.handleRemoteJsep({jsep: jsep});
                                 }
@@ -552,8 +558,6 @@
                     console.log("hit remote", track)
 
                     if (!on){
-                        console.log("remove id", id)
-                        removeRemoteFacecam(id);
                         return;
                     }
 
