@@ -726,7 +726,7 @@
                 };
 
                 console.log("subscribe request:", subscribe);
-                videoRoomPlugin.send({ message: subscribe });
+                remoteFeedPugin.send({ message: subscribe });
             }
             else {
                 console.log("This field is required!"); // Alert if the field is empty
