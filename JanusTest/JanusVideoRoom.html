@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Janus Video Room</title>
+    <style>
+        #status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        video {
+            border: 1px solid #ccc;
+            background-color: #000;
+            width: 320px;
+            height: 240px;
+        }
+        #remoteVideos {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        /* #control-button {
+            margin: 10px;
+        } */
+    </style>
+</head>
+<body>
+    <h1>Janus Video Room</h1>
+    <div id="status">Status: Not connected</div>
+    <audio id="localAudio" autoplay playsinline></audio>
+    <video id="localVideo" autoplay playsinline></video>
+    <br />
+    <div id="control-button">    
+        <button id="publish">Publish</button>
+        <button id="unpublish">Unpublish</button>
+        <button id="mute">Mute</button>
+    </div>
+
+
+    <div id="remoteVideos">
+        <audio id="remoteAudio" autoplay playsinline></audio>
+        <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+    <br />
+    <button id="createRoom">Create Room</button>
+    <button id="joinRoom">Join Room</button>
+    <button id="showPublishers">Show Publishers</button>
+    <button id="showSubscribers">Show Subscribers</button>
+    <div id="publisherList"></div>
+    <div id="subscriberList"></div>
+
+    <!-- Include WebRTC adapter -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js"></script>
+    <script type="text/javascript" src="janus.js"></script>
+    <script>
+        let janus = null;
+        let videoRoomPlugin = null;
+        let opaqueId = "videoroomtest-" + Janus.randomString(12);
+        let myRoom = 123469420; // Room ID
+        const currentWebsocketURL = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
+        let myId = null;
+        let subscribers = []; // Store list of subscriber handles
+
+
+        function updateStatus(message) {
+            document.getElementById("status").innerText = "Status: " + message;
+        }
+
+        async function startFacecam(stream) {
+            try {
+                console.log("stream", stream)
+                // Attach the stream to the local video element
+                Janus.attachMediaStream(document.getElementById("localVideo"), stream);
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Could not access the camera. Please check your permissions.');
+            }
+        }
+        function newFacecam(stream) {
+            try {
+                console.log("stream", stream)
+
+                // Request access to the user's camera
+                Janus.attachMediaStream(document.getElementById("remoteVideo"), stream);
+
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Could not access the camera. Please check your permissions.');
+            }
+        }
+        async function newAudio(stream) {
+            try {
+                console.log("stream", stream)
+
+                // Attach the stream to the local video element
+                Janus.attachMediaStream(document.getElementById("remoteAudio"), stream);
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                alert('Could not access the camera. Please check your permissions.');
+            }
+        }
+        Janus.init({
+            debug: "all",
+            callback: function() {
+                janus = new Janus({
+                    server: currentWebsocketURL,
+                    success: function() {
+                        janus.attach({
+                            plugin: "janus.plugin.videoroom",
+                            opaqueId: opaqueId,
+                            success: function(pluginHandle) {
+                                videoRoomPlugin = pluginHandle;
+                                updateStatus("Plugin attached. Ready to create or join a room.");
+                                document.getElementById("publish").addEventListener("click", publishOwnFeed);
+                            },
+                            error: function(error) {
+                                console.error("Error attaching plugin...", error);
+                                updateStatus("Error attaching plugin.");
+                            },
+                            onmessage: async function(msg, jsep) {
+                                console.log("event happened: ", msg)
+                                var event = msg["videoroom"];
+                                if (event) {
+                                    if (event === "joined") {
+                                        myId = msg["id"];
+                                        updateStatus("Successfully joined the room. Publishing...");
+
+                                        // Subscribe to existing publishers
+                                        if (msg["publishers"]) {
+                                            console.log("hit publishers: ", msg)
+
+                                            let list = msg["publishers"];
+                                            for (let f in list) {
+                                                let id = list[f]["id"];
+                                                let display = list[f]["display"];
+                                                newRemoteFeed(id, display);
+                                            }
+                                        }
+
+                                        // Get the user's video and audio tracks
+                                        // const { videoTrack, audioTrack } = await startFacecam();
+
+                                        // You can use these tracks when publishing your own feed
+                                        // publishOwnFeed();
+                                    } else if (event === "event") {
+                                        // Handle new publishers joining after you
+                                        if (msg["publishers"]) {
+                                            console.log("hit event new publishers: ", msg)
+                                            let list = msg["publishers"];
+                                            for (let f in list) {
+                                                let id = list[f]["id"];
+                                                let display = list[f]["display"];
+                                                newRemoteFeed(id, display);
+                                            }
+                                        }
+                                    }
+                                }
+                                if (jsep) {
+                                    videoRoomPlugin.handleRemoteJsep({ jsep: jsep });
+                                }
+                            },
+                            onlocaltrack: function(track) {
+                                console.log("hit local", track)
+
+                                if(track.kind === 'video'){
+                                    let stream = new MediaStream([track]);
+                                    startFacecam(stream);
+                                }
+
+                                updateStatus("Local stream started.");
+                                document.getElementById("unpublish").addEventListener("click", unpublishOwnFeed);
+                                document.getElementById("mute").addEventListener("click", toggleMute);
+
+                            },
+                            onremotetrack: function(track) {
+
+                            },
+                            oncleanup: function() {
+                                console.log("Cleanup done.");
+                                updateStatus("Cleanup done.");
+                            }
+                        });
+                    },
+                    error: function(error) {
+                        console.error("Error connecting to Janus:", error);
+                        updateStatus("Error connecting to Janus.");
+                    }
+                });
+            }
+        });
+
+        function publishOwnFeed() {
+            let tracks = [];
+            tracks.push({ type: 'audio', capture: true, recv: false, muted: false });
+            tracks.push({ type: 'video', capture: true, recv: false, muted: false });
+            videoRoomPlugin.createOffer({
+                tracks: tracks, // Pass the tracks here
+                // media: {video: videoTrack, audio: audioTrack},
+                success: function(jsep) {
+                    let publish = { 
+                        request: "publish",
+                        descriptions: [
+                            {
+                                mid: "0",
+                                description: "audio"
+                            },
+                            {
+                                mid: "1",
+                                description: "video"
+                            }
+                        ]
+                    };
+                    
+                    videoRoomPlugin.send({ message: publish, jsep: jsep });
+                },
+                error: function(error) {
+                    console.error("WebRTC error:", error);
+                    updateStatus("WebRTC error.");
+                }
+            });
+        }
+
+        function unpublishOwnFeed() {
+            // Unpublish our stream
+            let unpublish = { request: "unpublish" };
+            videoRoomPlugin.send({ message: unpublish });
+        }
+
+        function toggleMute() {
+            let muted = videoRoomPlugin.isAudioMuted();
+            Janus.log((muted ? "Unmuting" : "Muting") + " local stream...");
+            if(muted)
+                videoRoomPlugin.unmuteAudio();
+            else
+                videoRoomPlugin.muteAudio();
+            muted = videoRoomPlugin.isAudioMuted();
+            document.getElementById('mute').innerHTML = muted ? "Unmute" : "Mute";
+        }
+
+        function newRemoteFeed(id, display) {
+            let remoteFeed = null;
+            janus.attach({
+                plugin: "janus.plugin.videoroom",
+                opaqueId: opaqueId,
+                success: function(pluginHandle) {
+                    remoteFeed = pluginHandle;
+                    subscribers.push(remoteFeed);
+                    let subscribe = {
+                        request: "join",
+                        room: myRoom,
+                        ptype: "subscriber",
+                        streams: [
+                            {
+                                feed: id,
+                                mid: '0'
+                            },
+                            {
+                                feed: id,
+                                mid: '1'
+                            }
+                        // Other streams to subscribe to
+                        ]
+                    };
+                    remoteFeed.send({ message: subscribe });
+                },
+                onmessage: function(msg, jsep) {
+
+                    console.log("event happened in new remote feed: ", msg)
+
+                    if (jsep) {
+                        remoteFeed.createAnswer({
+                            jsep: jsep,
+							tracks: [
+								{ type: 'data' }
+							],
+                            success: function(jsep) {
+                                let body = { request: "start", room: myRoom };
+                                remoteFeed.send({ message: body, jsep: jsep });
+                            },
+                            error: function(error) {
+                                console.error("WebRTC error:", error);
+                                updateStatus("WebRTC error.");
+                            }
+                        });
+                    }
+                },
+                onremotetrack: function(track) {
+                    console.log("hit remote", track)
+
+                    // Add the video and audio tracks
+
+                    let stream = new MediaStream([track]);
+
+                    if(track.kind === "audio"){
+                        newAudio(stream)
+                    }
+                    if(track.kind === "video"){
+                        newFacecam(stream);
+                    }
+                    updateStatus("Local stream started.");
+                },
+                oncleanup: function() {
+                    console.log("Cleanup done for remote feed " + id);
+                }
+            });
+        }
+
+        document.getElementById("createRoom").addEventListener("click", function() {
+            let create = 
+            {
+                request: "create",
+                room: myRoom,
+                publishers: 6
+            };
+            videoRoomPlugin.send({
+                message: create,
+                success: function(result) {
+                    updateStatus("Room created with ID: " + result.room);
+                }
+            });
+        });
+
+        document.getElementById("joinRoom").addEventListener("click", function() {
+            let join = 
+            { 
+                request: "join",
+                room: myRoom,
+                ptype: "publisher",
+                display: "User-laptop" 
+            };
+
+            console.log("join request:", join);
+            videoRoomPlugin.send({ message: join });
+        });
+
+        document.getElementById("showPublishers").addEventListener("click", function() {
+            videoRoomPlugin.send({
+                message: { request: "listparticipants", room: myRoom },
+                success: function(result) {
+                    let participants = result.participants;
+                    let publisherList = participants.filter(p => p.publisher);
+                    document.getElementById("publisherList").innerHTML = "<h3>Publishers:</h3><ul>" +
+                        publisherList.map(p => "<li>" + p.display + " (ID: " + p.id + ")</li>").join('') +
+                        "</ul>";
+                }
+            });
+        });
+
+        document.getElementById("showSubscribers").addEventListener("click", function() {
+            document.getElementById("subscriberList").innerHTML = "<h3>Subscribers:</h3><ul>" +
+                subscribers.map(s => "<li>ID: " + s.getId() + "</li>").join('') +
+                "</ul>";
+        });
+    </script>
+</body>
+</html>

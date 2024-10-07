@@ -32,7 +32,7 @@
         <video id="teacherVideo" autoplay playsinline></video>
         <video id="Video-1" autoplay playsinline></video>
         <video id="Video-2" autoplay playsinline></video>
-        <!-- <video id="Video-3" autoplay playsinline></video> -->
+        <video id="Video-3" autoplay playsinline></video>
         <!-- <video id="Video-4" autoplay playsinline></video> -->
     </div>
     <div id="remoteAudios">
@@ -47,17 +47,11 @@
     </div>
     <input type="text" id="myId" name="myId" required>
     <button id="joinRoom">Join Room</button>
+    <br />
+
+    <!-- <input type="text" id="otherId" name="otherId" required>
     <button id="switchCam">Switch Cam</button>
-    <button id="unsub">UnSubscribe All</button>
-    <br />
-
-    <input type="text" id="subId" name="subId" required>
-    <button id="sub">Subscribe</button>
-    <br />
-
-    <!-- <input type="text" id="otherId" name="otherId" required> -->
-    <!-- <button id="switchCam">Switch Cam</button> -->
-    <!-- <br /> -->
+    <br /> -->
 
     <button id="createRoom">Create Room</button>
     <button id="showPublishers">Show Publishers</button>
@@ -73,19 +67,18 @@
     <script>
         let janus = null;
         let videoRoomPlugin = null;
-        let remoteFeedPugin = null;
         let audiobridgePlugin = null;
         let opaqueId = "videoroomtest-" + Janus.randomString(12);
         let myRoom = 123469420; // Room ID
-        const server = "ws://143.198.212.46:8188/ws"; // Your Janus server URL
+        const server = "ws://125.212.229.11:8188/ws"; // Your Janus server URL
         // let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
         let otherId = null;
         let subscribers = []; // Store list of subscriber handles
         let isPublishing = false;
         const placeholders = [
-            { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false, remoteFeedPugin: null }, // Placeholder 1
-            { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false, remoteFeedPugin: null }, // Placeholder 2
-            // { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false, remoteFeedPugin: null }, // Placeholder 3
+            { id: "Video-1", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 1
+            { id: "Video-2", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 2
+            { id: "Video-3", isOccupied: false, videoTrackId: null, videoTrack: null, userId: null, isTalking: false }, // Placeholder 3
         ];
         const waitingQueue = []
         let isMuted = true;
@@ -110,13 +103,12 @@
                 let currentPlaceholder = placeholders[i];
 
                 if (nextPlaceholder.isOccupied) {
-                    newRemoteFacecam(nextPlaceholder.videoTrack, nextPlaceholder.userId, nextPlaceholder.remoteFeedPugin);
+                    newRemoteFacecam(nextPlaceholder.videoTrack, nextPlaceholder.userId);
 
                     nextPlaceholder.isOccupied = false;
                     nextPlaceholder.videoTrackId = null;
                     nextPlaceholder.videoTrack = null;
                     nextPlaceholder.userId = null;
-                    nextPlaceholder.remoteFeedPugin = null;
 
                     clearPlaceholder(nextPlaceholder.id);
                 } else {
@@ -131,20 +123,13 @@
                 const placeholder = placeholders.find(p => p.id === "Video-1");
                 if (placeholder) {
                     if(placeholder.isOccupied === true){
-                        var availablePlaceholder = getAvailablePlaceholder();
-                        if(availablePlaceholder) {
-                            newRemoteFacecam(placeholder.videoTrack, placeholder.userId, placeholder.remoteFeedPugin);
-                        }
-                        else {
-                            cleanupRemoteFeed(placeholder.remoteFeedPugin);
-                            waitingQueue.push(placeholder.userId);
-                        }
+                        newRemoteFacecam(placeholder.videoTrack, placeholder.userId);
                     }
                     placeholder.isOccupied = true;
                     placeholder.videoTrackId = track.id;
                     placeholder.videoTrack = track;
                     placeholder.userId = otherId;
-                    placeholder.remoteFeedPugin = videoRoomPlugin;
+
                 }
                 // Attach the stream to the local video element
                 var stream = new MediaStream([track]);
@@ -164,13 +149,13 @@
                     placeholder.videoTrackId = null;
                     placeholder.videoTrack = null;
                     placeholder.userId = null;
-                    placeholder.remoteFeedPugin = null;
 
                     clearPlaceholder(placeholder.id);
 
                     if (waitingQueue.length > 0) {
                         newRemoteFeed(waitingQueue[0]);
                     }
+
                     else {
                         shiftPublishers(placeholders.indexOf(placeholder));
                     }
@@ -184,7 +169,7 @@
             }
         }
 
-        function newRemoteFacecam(track, userId, remoteFeedPugin) {
+        function newRemoteFacecam(track, id) {
             try {
                 console.log("placeholder", placeholders);
                 const availablePlaceholder = getAvailablePlaceholder();
@@ -192,14 +177,13 @@
                     availablePlaceholder.isOccupied = true;
                     availablePlaceholder.videoTrackId = track.id;
                     availablePlaceholder.videoTrack = track;
-                    availablePlaceholder.userId = userId;
-                    availablePlaceholder.remoteFeedPugin = remoteFeedPugin;
+                    availablePlaceholder.userId = id;
 
                     // Attach the stream to the remote video element
                     var stream = new MediaStream([track]);
                     Janus.attachMediaStream(document.getElementById(availablePlaceholder.id), stream);
                 } else {
-                    waitingQueue.push(userId);
+                    waitingQueue.push(id);
                 }
             } catch (error) {
                 console.error('Error accessing camera:', error);
@@ -207,28 +191,25 @@
             }
         }
 
-        function removeRemoteFacecam(track) {
+        function removeRemoteFacecam(userId) {
             try {
-                const placeholder = placeholders.find(p => p.videoTrack === track);
-                const removingId = placeholder.userId;
-                if (placeholder) {
-                    cleanupRemoteFeed(placeholder.remoteFeedPugin);
+                const placeholder = placeholders.find(p => p.userId === userId);
 
+                if (placeholder) {
                     placeholder.isOccupied = false;
                     placeholder.videoTrackId = null;
                     placeholder.videoTrack = null;
                     placeholder.userId = null;
-                    placeholder.remoteFeedPugin = null;
 
                     clearPlaceholder(placeholder.id);
 
                     if (waitingQueue.length > 0) {
                         newRemoteFeed(waitingQueue[0]);
                     }
+
                     else {
                         shiftPublishers(placeholders.indexOf(placeholder));
                     }
-
                 } else if (waitingQueue.includes(userId)) {
                     const index = waitingQueue.indexOf(userId); // Find the index of the element (30)
                     if (index !== -1) {
@@ -241,23 +222,6 @@
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
             }
-        }
-
-        function switchRemoteFeed(placeholderIndex, oldId, newId) {
-            let update = {
-                request: "update",
-                subscribe: [
-                    {
-                        feed: parseInt(newId),
-                    }
-                ],
-                unsubscribe: [
-                    {
-                        feed: parseInt(oldId),
-                    }
-                ]
-            };
-            placeholders[placeholderIndex].remoteFeedPugin.send({ message: update });
         }
 
         Janus.init({
@@ -293,15 +257,9 @@
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
+                                                let display = list[f]["display"];
                                                 console.log("run 1");
-                                                var placeholder = getAvailablePlaceholder()
-                                                if(placeholder){
-                                                    var index = placeholders.indexOf(placeholder);
-                                                    newRemoteFeed(id);
-                                                }
-                                                else{
-                                                    waitingQueue.push(id);
-                                                }
+                                                newRemoteFeed(id, display);
                                             }
                                         }
 
@@ -317,21 +275,20 @@
                                             let list = msg["publishers"];
                                             for (let f in list) {
                                                 let id = list[f]["id"];
+                                                let display = list[f]["display"];
                                                 console.log("run 2");
-                                                var placeholder = getAvailablePlaceholder()
-                                                if(placeholder){
-                                                    var index = placeholders.indexOf(placeholder);
-                                                    newRemoteFeed(id);
-                                                }
-                                                else{
-                                                    waitingQueue.push(id);
-                                                }                                         
+                                                newRemoteFeed(id, display);
                                             }
                                         }
                                         if (msg["unpublished"] === "ok") {
                                             console.log("unpublished", msg)
                                             stopFacecam();
                                         }
+
+                                        // if (msg["unpublished"] && msg["unpublished"] !== "ok") {
+                                        //     console.log("other person unpublished", msg)
+                                        //     removeRemoteFacecam(msg["unpublished"]);
+                                        // }
                                     }
                                 }
                                 if (jsep) {
@@ -413,16 +370,16 @@
                                         } else if (isPublishing) {
                                             var placeholder = placeholders.find(p => p.isTalking === false && p.id !== "Video-1");
                                             if(placeholder) {
-                                                var oldId = placeholder.userId;
-                                                waitingQueue[waitingQueue.indexOf(talkingId)] = oldId;
-                                                switchRemoteFeed(placeholders.indexOf(placeholder), oldId, talkingId)
+                                                waitingQueue[waitingQueue.indexOf(talkingId)] = placeholder.userId;
+                                                removeRemoteFacecam(placeholder.userId)
+                                                newRemoteFeed(talkingId)
                                             }
                                         } else {
                                             var placeholder = placeholders.find(p => p.isTalking === false);
                                             if(placeholder) {
-                                                var oldId = placeholder.userId;
                                                 waitingQueue[waitingQueue.indexOf(talkingId)] = placeholder.userId;
-                                                switchRemoteFeed(placeholders.indexOf(placeholder), oldId, talkingId)
+                                                removeRemoteFacecam(placeholder.userId)
+                                                newRemoteFeed(talkingId)
                                             }
                                         }
                                     } else if(event === "stopped-talking") {
@@ -508,13 +465,13 @@
         }
 
         function newRemoteFeed(id) {
-            let remotePlugin = null;
+            let remoteFeed = null;
             janus.attach({
                 plugin: "janus.plugin.videoroom",
                 opaqueId: opaqueId,
                 success: function(pluginHandle) {
-                    remotePlugin = pluginHandle;
-                    subscribers.push(pluginHandle);
+                    remoteFeed = pluginHandle;
+                    subscribers.push(remoteFeed);
                     let subscribe = {
                         request: "join",
                         room: myRoom,
@@ -525,21 +482,21 @@
                             }
                         ]
                     };
-                    remotePlugin.send({ message: subscribe });
+                    remoteFeed.send({ message: subscribe });
                 },
                 onmessage: function(msg, jsep) {
 
                     console.log("event happened in new remote feed: ", msg)
 
                     if (jsep) {
-                        remotePlugin.createAnswer({
+                        remoteFeed.createAnswer({
                             jsep: jsep,
 							tracks: [
 								{ type: 'data' }
 							],
                             success: function(jsep) {
                                 let body = { request: "start", room: myRoom };
-                                remotePlugin.send({ message: body, jsep: jsep });
+                                remoteFeed.send({ message: body, jsep: jsep });
                             },
                             error: function(error) {
                                 console.error("WebRTC error:", error);
@@ -552,17 +509,16 @@
                     console.log("hit remote", track)
 
                     if (!on){
-                        removeRemoteFacecam(track);
+                        removeRemoteFacecam(id);
                         return;
                     }
-
                     if (placeholders.some(p => p.userId === id) || waitingQueue.includes(id)){
                         return;
                     }
                     // Add the video tracks
                     if(track.kind === "video"){
                         console.log("id", id);
-                        newRemoteFacecam(track, id, remotePlugin);
+                        newRemoteFacecam(track, id);
                     }
                     updateStatus("Local stream started.");
                 },
@@ -571,6 +527,18 @@
                 }
             });
         }
+
+        // function switchRemoteFeed(id) {
+        //     let switchRequest = {
+        //         request: "switch",
+        //         streams: [
+        //             {
+        //                 feed: id,
+        //             }
+        //         ]
+        //     };
+        //     videoRoomPlugin.send({ message: switchRequest });
+        // }
 
         function joinAudioRoom() {
             event.preventDefault(); // Prevent form from submitting to a new page
@@ -588,22 +556,6 @@
             else {
                 console.log("This field is required!"); // Alert if the field is empty
             }
-        }
-
-        function cleanupRemoteFeed(remoteFeed) {
-        if (remoteFeed) {
-            console.log("Cleaning up the remote feed...");
-
-            // Detach the remote feed from Janus
-            remoteFeed.detach({
-            success: function() {
-                console.log("Remote feed detached and cleaned up.");
-            },
-            error: function(error) {
-                console.error("Error detaching the remote feed: ", error);
-            }
-            });
-        }
         }
 
         document.getElementById("createRoom").addEventListener("click", function() {
@@ -655,58 +607,15 @@
             }
         });
 
-        // document.getElementById("sub").addEventListener("click", function(event) {
+        // document.getElementById("switchCam").addEventListener("click", function(event) {
         //     event.preventDefault(); // Prevent form from submitting to a new page
-        //     otherId = document.getElementById('subId').value;
+        //     otherId = document.getElementById('otherId').value;
         //     if (otherId){
-        //         let subscribe = 
-        //         { 
-        //             request: "update",
-        //             subscribe: [
-        //                 {
-        //                     feed: parseInt(otherId),
-        //                 }
-        //             ],
-        //             // unsubscribe: [
-        //             //     {
-        //             //         feed: otherId,
-        //             //     }
-        //             // ],
-        //         };
-
-        //         console.log("subscribe request:", subscribe);
-        //         remoteFeedPugin.send({ message: subscribe });
+        //         switchRemoteFeed(otherId);
         //     }
         //     else {
         //         console.log("This field is required!"); // Alert if the field is empty
         //     }
-        // });
-
-        // document.getElementById("switchCam").addEventListener("click", function() {
-        //     var oldId = placeholders[1].userId;
-        //     var newId = waitingQueue[0];
-
-
-        //     placeholders[1].isOccupied = false;
-        //     placeholders[1].videoTrackId = null;
-        //     placeholders[1].videoTrack = null;
-        //     placeholders[1].userId = null;
-            
-        //     waitingQueue[0] = oldId;
-
-        //     switchRemoteFeed(oldId, newId);
-        // });
-
-        // document.getElementById("unsub").addEventListener("click", function() {
-        //     let unsubscribe = {
-        //         request: "unsubscribe",
-        //         streams: [
-        //             {
-        //                 feed: placeholders[1].userId,
-        //             }
-        //         ]
-        //     };
-        //     remoteFeedPugin.send({ message: unsubscribe });
         // });
 
         document.getElementById("showPublishers").addEventListener("click", function() {
