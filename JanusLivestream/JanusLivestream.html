@@ -712,12 +712,17 @@
             if (otherId){
                 let subscribe = 
                 { 
-                    request: "subscribe",
-                    streams: [
+                    request: "update",
+                    subscribe: [
                         {
                             feed: otherId,
                         }
                     ],
+                    // unsubscribe: [
+                    //     {
+                    //         feed: otherId,
+                    //     }
+                    // ],
                 };
 
                 console.log("subscribe request:", subscribe);
@@ -752,7 +757,7 @@
                     }
                 ]
             };
-            videoRoomPlugin.send({ message: unsubscribe });
+            remoteFeedPugin.send({ message: unsubscribe });
         });
 
         document.getElementById("showPublishers").addEventListener("click", function() {
