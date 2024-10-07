@@ -551,10 +551,11 @@
                 onremotetrack: function(track, mid, on) {
                     console.log("hit remote", track)
 
-                    if (!on){
-                        removeRemoteFacecam(track);
-                        return;
-                    }
+                    // if (!on){
+                    //     removeRemoteFacecam(track);
+                    //     return;
+                    // }
+
                     if (placeholders.some(p => p.userId === id) || waitingQueue.includes(id)){
                         return;
                     }
