@@ -207,9 +207,9 @@
             }
         }
 
-        function removeRemoteFacecam(userId) {
+        function removeRemoteFacecam(track) {
             try {
-                const placeholder = placeholders.find(p => p.userId === userId);
+                const placeholder = placeholders.find(p => p.videoTrack === track);
                 const removingId = placeholder.userId;
                 if (placeholder) {
                     cleanupRemoteFeed(placeholder.remoteFeedPugin);
@@ -552,7 +552,7 @@
                     console.log("hit remote", track)
 
                     if (!on){
-                        removeRemoteFacecam(id);
+                        removeRemoteFacecam(track);
                         return;
                     }
                     if (placeholders.some(p => p.userId === id) || waitingQueue.includes(id)){
