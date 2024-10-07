@@ -689,18 +689,17 @@
             event.preventDefault(); // Prevent form from submitting to a new page
             otherId = document.getElementById('myId').value;
             if (otherId){
-                let subscribe = 
+                let join = 
                 { 
                     request: "join",
-                    streams: [
-                        {
-                            feed: otherId,
-                        }
-                    ],
+                    room: myRoom,
+                    ptype: "publisher",
+                    display: "User-laptop",
+                    id: parseInt(otherId),
                 };
 
-                console.log("subscribe request:", subscribe);
-                remoteFeedPugin.send({ message: subscribe });
+                console.log("join request:", join);
+                videoRoomPlugin.send({ message: join });
             }
             else {
                 console.log("This field is required!"); // Alert if the field is empty
@@ -714,14 +713,15 @@
                 let subscribe = 
                 { 
                     request: "subscribe",
-                    room: myRoom,
-                    ptype: "publisher",
-                    display: "User-laptop",
-                    id: parseInt(otherId),
+                    streams: [
+                        {
+                            feed: otherId,
+                        }
+                    ],
                 };
 
-                console.log("join request:", join);
-                videoRoomPlugin.send({ message: join });
+                console.log("subscribe request:", subscribe);
+                videoRoomPlugin.send({ message: subscribe });
             }
             else {
                 console.log("This field is required!"); // Alert if the field is empty
