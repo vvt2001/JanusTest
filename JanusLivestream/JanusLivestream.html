@@ -207,10 +207,10 @@
             }
         }
 
-        function removeRemoteFacecam(id) {
+        function removeRemoteFacecam(userId) {
             try {
-                const placeholder = placeholders.find(p => p.userId === id);
-                
+                const placeholder = placeholders.find(p => p.userId === userId);
+
                 if (placeholder) {
                     cleanupRemoteFeed(placeholder.remoteFeedPugin);
 
