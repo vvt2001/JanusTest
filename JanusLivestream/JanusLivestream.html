@@ -49,7 +49,10 @@
     <button id="joinRoom">Join Room</button>
     <button id="switchCam">Switch Cam</button>
     <button id="unsub">UnSubscribe All</button>
+    <br />
 
+    <input type="text" id="subId" name="subId" required>
+    <button id="sub">Subscribe</button>
     <br />
 
     <!-- <input type="text" id="otherId" name="otherId" required> -->
@@ -686,9 +689,31 @@
             event.preventDefault(); // Prevent form from submitting to a new page
             otherId = document.getElementById('myId').value;
             if (otherId){
-                let join = 
+                let subscribe = 
                 { 
                     request: "join",
+                    streams: [
+                        {
+                            feed: otherId,
+                        }
+                    ],
+                };
+
+                console.log("subscribe request:", subscribe);
+                remoteFeedPugin.send({ message: subscribe });
+            }
+            else {
+                console.log("This field is required!"); // Alert if the field is empty
+            }
+        });
+
+        document.getElementById("sub").addEventListener("click", function(event) {
+            event.preventDefault(); // Prevent form from submitting to a new page
+            otherId = document.getElementById('subId').value;
+            if (otherId){
+                let subscribe = 
+                { 
+                    request: "subscribe",
                     room: myRoom,
                     ptype: "publisher",
                     display: "User-laptop",
@@ -724,9 +749,6 @@
                 streams: [
                     {
                         feed: placeholders[1].userId,
-                    },
-                    {
-                        feed: placeholders[2].userId,
                     }
                 ]
             };
