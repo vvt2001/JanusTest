@@ -40,7 +40,7 @@
     </div>
 
     <br />
-    <div id="control-button">    
+    <div id="control-button">
         <button id="publish">Publish</button>
         <button id="unpublish">Unpublish</button>
         <button id="mute">Unmute</button>
@@ -82,6 +82,7 @@
         let isMuted = true;
         let username = "User_" + Math.floor(Math.random() * 1000);
         let isTeacher = false;
+        let teacherId = 123;
 
         function updateStatus(message) {
             document.getElementById("status").innerText = "Status: " + message;
@@ -327,28 +328,28 @@
                                                 let id = list[f]["id"];
                                                 console.log("run 1");
 
-                                                // if(id === id_giaovien) {
-                                                //     newTeacherRemoteFeed(id);
-                                                // }
-                                                // else {
-                                                    // var placeholder = getAvailablePlaceholder()
-                                                    // if(placeholder){
-                                                    //     var index = placeholders.indexOf(placeholder);
-                                                    //     newRemoteFeed(id);
-                                                    // }
-                                                    // else{
-                                                    //     waitingQueue.push(id);
-                                                    // }
-                                                // }
+                                                if(id === teacherId) {
+                                                    newTeacherRemoteFeed(id);
+                                                }
+                                                else {
+                                                    var placeholder = getAvailablePlaceholder()
+                                                    if(placeholder){
+                                                        var index = placeholders.indexOf(placeholder);
+                                                        newRemoteFeed(id);
+                                                    }
+                                                    else{
+                                                        waitingQueue.push(id);
+                                                    }
+                                                }
 
-                                                var placeholder = getAvailablePlaceholder()
-                                                if(placeholder){
-                                                    var index = placeholders.indexOf(placeholder);
-                                                    newRemoteFeed(id);
-                                                }
-                                                else{
-                                                    waitingQueue.push(id);
-                                                }
+                                                // var placeholder = getAvailablePlaceholder()
+                                                // if(placeholder){
+                                                //     var index = placeholders.indexOf(placeholder);
+                                                //     newRemoteFeed(id);
+                                                // }
+                                                // else{
+                                                //     waitingQueue.push(id);
+                                                // }
                                             }
                                         }
 
@@ -365,56 +366,56 @@
                                             for (let f in list) {
                                                 let id = list[f]["id"];
                                                 console.log("run 2");
-                                                
-                                                // if(id === id_giaovien) {
-                                                //     newTeacherRemoteFeed(id);
-                                                // }
-                                                // else {
-                                                    // var placeholder = getAvailablePlaceholder()
-                                                    // if(placeholder){
-                                                    //     var index = placeholders.indexOf(placeholder);
-                                                    //     newRemoteFeed(id);
-                                                    // }
-                                                    // else{
-                                                    //     waitingQueue.push(id);
-                                                    // }   
-                                                // }
 
-                                                var placeholder = getAvailablePlaceholder()
-                                                if(placeholder){
-                                                    var index = placeholders.indexOf(placeholder);
-                                                    newRemoteFeed(id);
+                                                if(id === teacherId) {
+                                                    newTeacherRemoteFeed(id);
                                                 }
-                                                else{
-                                                    waitingQueue.push(id);
-                                                }   
+                                                else {
+                                                    var placeholder = getAvailablePlaceholder()
+                                                    if(placeholder){
+                                                        var index = placeholders.indexOf(placeholder);
+                                                        newRemoteFeed(id);
+                                                    }
+                                                    else{
+                                                        waitingQueue.push(id);
+                                                    }
+                                                }
+
+                                                // var placeholder = getAvailablePlaceholder()
+                                                // if(placeholder){
+                                                //     var index = placeholders.indexOf(placeholder);
+                                                //     newRemoteFeed(id);
+                                                // }
+                                                // else{
+                                                //     waitingQueue.push(id);
+                                                // }
                                             }
                                         }
 
                                         if (msg["unpublished"] === "ok") {
                                             console.log("unpublished", msg)
-                                            
-                                            // if(isTeacher) {
-                                            //     removeTeacherFacecam();
-                                            // }
-                                            // else {
-                                            //     stopFacecam();
-                                            // }     
 
-                                            stopFacecam();
+                                            if(isTeacher) {
+                                                removeTeacherFacecam();
+                                            }
+                                            else {
+                                                stopFacecam();
+                                            }
+
+                                            // stopFacecam();
                                         }
 
                                         if (Number.isFinite(msg["unpublished"])) {
                                             console.log("someone unpublished", msg)
 
-                                            // if(msg["unpublished"] === id_giaovien) {
-                                            //     removeTeacherFacecam();
-                                            // }
-                                            // else {
-                                            //     removeRemoteFacecam(msg["unpublished"]);
-                                            // }     
+                                            if(msg["unpublished"] === teacherId) {
+                                                removeTeacherFacecam();
+                                            }
+                                            else {
+                                                removeRemoteFacecam(msg["unpublished"]);
+                                            }
 
-                                            removeRemoteFacecam(msg["unpublished"]);
+                                            // removeRemoteFacecam(msg["unpublished"]);
                                         }
                                     }
                                 }
@@ -548,7 +549,7 @@
                     }
                 });
 
-                
+
             }
         });
 
@@ -559,10 +560,10 @@
                 tracks: tracks, // Pass the tracks here
                 // media: {video: videoTrack, audio: audioTrack},
                 success: function(jsep) {
-                    let publish = { 
+                    let publish = {
                         request: "publish",
                     };
-                    
+
                     videoRoomPlugin.send({ message: publish, jsep: jsep });
                 },
                 error: function(error) {
@@ -761,7 +762,7 @@
         }
 
         document.getElementById("createRoom").addEventListener("click", function() {
-            let createVideoRoom = 
+            let createVideoRoom =
             {
                 request: "create",
                 room: myRoom,
@@ -774,7 +775,7 @@
                 }
             });
 
-            let createAudioBridge = { 
+            let createAudioBridge = {
                 request: "create",
                 room: myRoom,
                 description: "My audio room",
@@ -792,8 +793,8 @@
             event.preventDefault(); // Prevent form from submitting to a new page
             myId = document.getElementById('myId').value;
             if (myId){
-                let join = 
-                { 
+                let join =
+                {
                     request: "join",
                     room: myRoom,
                     ptype: "publisher",
