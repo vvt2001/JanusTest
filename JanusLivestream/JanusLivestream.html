@@ -169,7 +169,9 @@
                     clearPlaceholder(placeholder.id);
 
                     if (waitingQueue.length > 0) {
-                        newRemoteFeed(waitingQueue[0]);
+                        var newId = waitingQueue[0];
+                        waitingQueue.splice(0, 1);
+                        newRemoteFeed(newId);
                     }
                     else {
                         shiftPublishers(placeholders.indexOf(placeholder));
@@ -223,7 +225,9 @@
                     clearPlaceholder(placeholder.id);
 
                     if (waitingQueue.length > 0) {
-                        newRemoteFeed(waitingQueue[0]);
+                        var newId = waitingQueue[0];
+                        waitingQueue.splice(0, 1);
+                        newRemoteFeed(newId);
                     }
                     else {
                         shiftPublishers(placeholders.indexOf(placeholder));
@@ -555,9 +559,10 @@
                     }
                 },
                 onremotetrack: function(track, mid, on) {
-                    console.log("hit remote", track)
+                    console.log("hit remote", track, on)
 
                     if (!on){
+                        console.log("something something muted bs")
                         return;
                     }
 
