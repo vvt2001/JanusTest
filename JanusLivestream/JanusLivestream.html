@@ -81,7 +81,7 @@
         const waitingQueue = []
         let isMuted = true;
         let username = "User_" + Math.floor(Math.random() * 1000);
-        let isTeacher = false;
+        let isTeacher = true;
         let teacherId = 123;
 
         function updateStatus(message) {
@@ -256,20 +256,36 @@
 
         function removeTeacherFacecam() {
             try {
-                console.log("Cleaning up the remote feed...");
-                // Detach the remote feed from Janus
-                teacherFeedPlugin.detach({
-                    success: function() {
-                        console.log("Remote feed detached and cleaned up.");
-                    },
-                    error: function(error) {
-                        console.error("Error detaching the remote feed: ", error);
-                    }
-                });
+                if (isTeacher) {
+                    console.log("Cleaning up the remote feed...");
+                    // Detach the remote feed from Janus
+                    videoRoomPlugin.detach({
+                        success: function() {
+                            console.log("Remote feed detached and cleaned up.");
+                        },
+                        error: function(error) {
+                            console.error("Error detaching the remote feed: ", error);
+                        }
+                    });
 
-                const placeholderElement = document.getElementById("teacherVideo");
-                placeholderElement.srcObject = null; // Clear the video or audio from the element
+                    const placeholderElement = document.getElementById("teacherVideo");
+                    placeholderElement.srcObject = null; // Clear the video or audio from the element
+                }
+                else {
+                    console.log("Cleaning up the remote feed...");
+                    // Detach the remote feed from Janus
+                    teacherFeedPlugin.detach({
+                        success: function() {
+                            console.log("Remote feed detached and cleaned up.");
+                        },
+                        error: function(error) {
+                            console.error("Error detaching the remote feed: ", error);
+                        }
+                    });
 
+                    const placeholderElement = document.getElementById("teacherVideo");
+                    placeholderElement.srcObject = null; // Clear the video or audio from the element
+                }
             } catch (error) {
                 console.error('Error accessing camera:', error);
                 alert('Could not access the camera. Please check your permissions.');
@@ -433,7 +449,7 @@
                                 }
                                 if(track.kind === 'video'){
                                     if(isTeacher){
-                                        startTeacherFaceCam(track);
+                                        startTeacherFacecam(track);
                                     }
                                     else {
                                         startFacecam(track);
