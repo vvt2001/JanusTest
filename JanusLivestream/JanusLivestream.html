@@ -416,22 +416,24 @@
                                         console.warn("The room has been destroyed!");
                                     } else if(event === "talking") {
                                         var talkingId = msg["id"]
-                                        var placeholder = placeholders.find(p => p.userId === talkingId);
-                                        if(placeholder) {
-                                            placeholder.isTalking = true;
+                                        var talkingPlaceholder = placeholders.find(p => p.userId === talkingId);
+                                        if(talkingPlaceholder) {
+                                            talkingPlaceholder.isTalking = true;
                                         } else if (isPublishing) {
-                                            var placeholder = placeholders.find(p => p.isTalking === false && p.id !== "Video-1");
-                                            if(placeholder) {
-                                                var oldId = placeholder.userId;
+                                            var replacingPlaceholder = placeholders.find(p => p.isTalking === false && p.id !== "Video-1");
+                                            if(replacingPlaceholder) {
+                                                var oldId = replacingPlaceholder.userId;
                                                 waitingQueue[waitingQueue.indexOf(talkingId)] = oldId;
-                                                switchRemoteFeed(placeholders.indexOf(placeholder), oldId, talkingId)
+                                                replacingPlaceholder.userId = talkingId;
+                                                switchRemoteFeed(placeholders.indexOf(replacingPlaceholder), oldId, talkingId)
                                             }
                                         } else {
-                                            var placeholder = placeholders.find(p => p.isTalking === false);
-                                            if(placeholder) {
-                                                var oldId = placeholder.userId;
-                                                waitingQueue[waitingQueue.indexOf(talkingId)] = placeholder.userId;
-                                                switchRemoteFeed(placeholders.indexOf(placeholder), oldId, talkingId)
+                                            var replacingPlaceholder = placeholders.find(p => p.isTalking === false);
+                                            if(replacingPlaceholder) {
+                                                var oldId = replacingPlaceholder.userId;
+                                                waitingQueue[waitingQueue.indexOf(talkingId)] = oldId;
+                                                replacingPlaceholder.userId = talkingId;
+                                                switchRemoteFeed(placeholders.indexOf(replacingPlaceholder), oldId, talkingId)
                                             }
                                         }
                                     } else if(event === "stopped-talking") {
