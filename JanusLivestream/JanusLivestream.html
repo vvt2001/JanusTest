@@ -207,10 +207,10 @@
             }
         }
 
-        function removeRemoteFacecam(track) {
+        function removeRemoteFacecam(id) {
             try {
-                const placeholder = placeholders.find(p => p.videoTrack === track);
-                const removingId = placeholder.userId;
+                const placeholder = placeholders.find(p => p.userId === id);
+                
                 if (placeholder) {
                     cleanupRemoteFeed(placeholder.remoteFeedPugin);
 
@@ -552,7 +552,8 @@
                     console.log("hit remote", track)
 
                     if (!on){
-                        removeRemoteFacecam(track);
+                        console.log("remove id", id)
+                        removeRemoteFacecam(id);
                         return;
                     }
 
@@ -561,7 +562,7 @@
                     }
                     // Add the video tracks
                     if(track.kind === "video"){
-                        console.log("id", id);
+                        console.log("new cam id", id);
                         newRemoteFacecam(track, id, remotePlugin);
                     }
                     updateStatus("Local stream started.");
