@@ -92,10 +92,9 @@ function initializeJanus() {
                 .getElementById("publish")
                 .addEventListener("click", publishOwnFeed);
 
-              var stream = getCanvasStream();
               document
-                .getElementById("publish")
-                .addEventListener("click", publishOwnCanvas(stream));
+                .getElementById("publish-canvas")
+                .addEventListener("click", publishOwnCanvas);
             },
             error: function (error) {
               console.error("Error attaching plugin...", error);
