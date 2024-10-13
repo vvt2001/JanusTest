@@ -358,7 +358,7 @@ async function publishCanvas() {
     success: function (jsep) {
       let publish = {
         request: "publish",
-        videocodec: "vp9",
+        // videocodec: "vp9",
       };
 
       canvasPlugin.send({ message: publish, jsep: jsep });
