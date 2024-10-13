@@ -1,4 +1,5 @@
 let videoRoomPlugin = null;
+let canvasPlugin = null;
 let remoteFeedPugin = null;
 let teacherFeedPlugin = null;
 let audiobridgePlugin = null;
@@ -289,7 +290,35 @@ function publishOwnFeed() {
   });
 }
 
-function publishOwnCanvas() {
+function attachCanvasPlugin() {
+  janus.attach({
+    plugin: "janus.plugin.videoroom",
+    opaqueId: opaqueId,
+    success: function (pluginHandle) {
+      canvasPlugin = pluginHandle;
+      console.log("Videoroom plugin attached successfully.");
+
+      publishCanvas;
+    },
+    error: function (error) {
+      console.error("Error attaching plugin...", error);
+    },
+    onmessage: async function (msg, jsep) {
+      console.log("event happened in canvas plugin: ", msg);
+
+      if (jsep) {
+        canvasPlugin.handleRemoteJsep({ jsep: jsep });
+      }
+    },
+    onlocaltrack: function (track, on) {},
+    onremotetrack: function (track) {},
+    oncleanup: function () {
+      console.log("Cleanup done.");
+    },
+  });
+}
+
+function publishCanvas() {
   var stream = getCanvasStream();
 
   var videoTracks = stream.getVideoTracks(); // Array of video tracks
@@ -299,7 +328,7 @@ function publishOwnCanvas() {
   tracks.push(videoTracks);
   tracks.push(audioTracks);
 
-  videoRoomPlugin.createOffer({
+  canvasPlugin.createOffer({
     tracks: tracks, // Pass the tracks here
     // media: {video: videoTrack, audio: audioTrack},
     success: function (jsep) {
@@ -307,7 +336,7 @@ function publishOwnCanvas() {
         request: "publish",
       };
 
-      videoRoomPlugin.send({ message: publish, jsep: jsep });
+      canvasPlugin.send({ message: publish, jsep: jsep });
     },
     error: function (error) {
       console.error("WebRTC error:", error);

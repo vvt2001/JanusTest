@@ -94,7 +94,7 @@ function initializeJanus() {
 
               document
                 .getElementById("publish-canvas")
-                .addEventListener("click", publishOwnCanvas);
+                .addEventListener("click", attachCanvasPlugin);
             },
             error: function (error) {
               console.error("Error attaching plugin...", error);
