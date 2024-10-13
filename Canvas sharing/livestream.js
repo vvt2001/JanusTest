@@ -218,7 +218,7 @@ function removeRemoteFacecam(userId) {
 
 function removeTeacherFacecam() {
   try {
-    if (isTeacher) {
+    if (myId === teacherId) {
       console.log("Cleaning up the remote feed...");
       // Detach the remote feed from Janus
       videoRoomPlugin.detach({

@@ -154,7 +154,7 @@ function initializeJanus() {
                   if (msg["unpublished"] === "ok") {
                     console.log("unpublished", msg);
 
-                    if (isTeacher) {
+                    if (myId === teacherId) {
                       removeTeacherFacecam();
                     } else {
                       stopFacecam();
@@ -189,7 +189,7 @@ function initializeJanus() {
                 return;
               }
               if (track.kind === "video") {
-                if (isTeacher) {
+                if (myId === teacherId) {
                   startTeacherFacecam(track);
                 } else {
                   startFacecam(track);
