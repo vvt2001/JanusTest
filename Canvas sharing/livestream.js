@@ -2,6 +2,8 @@ let videoRoomPlugin = null;
 let canvasPlugin = null;
 let remoteFeedPugin = null;
 let teacherFeedPlugin = null;
+let remoteCanvasFeedPlugin = null;
+
 let audiobridgePlugin = null;
 let myRoom = 8132037336; // Room ID
 let myDisplay = "User-laptop";
@@ -44,6 +46,7 @@ let isMuted = true;
 let username = "User_" + Math.floor(Math.random() * 1000);
 let isTeacher = true;
 let teacherId = 123;
+let canvasId = 69420;
 
 function getAvailablePlaceholder() {
   return placeholders.find((placeholder) => !placeholder.isOccupied);
@@ -296,9 +299,14 @@ function attachCanvasPlugin() {
     opaqueId: opaqueId,
     success: function (pluginHandle) {
       canvasPlugin = pluginHandle;
-      console.log("Videoroom plugin attached successfully.");
+      console.log("Canvas plugin attached successfully.");
 
-      publishCanvas;
+      document
+        .getElementById("join-canvas")
+        .addEventListener("click", canvasJoining);
+      document
+        .getElementById("share-canvas")
+        .addEventListener("click", publishCanvas);
     },
     error: function (error) {
       console.error("Error attaching plugin...", error);
@@ -318,19 +326,32 @@ function attachCanvasPlugin() {
   });
 }
 
+function canvasJoining() {
+  let join = {
+    request: "join",
+    room: myRoom,
+    ptype: "publisher",
+    display: myDisplay,
+    id: canvasId,
+  };
+
+  console.log("join request:", join);
+  canvasPlugin.send({ message: join });
+}
 function publishCanvas() {
   var stream = getCanvasStream();
 
-  var videoTracks = stream.getVideoTracks(); // Array of video tracks
-  var audioTracks = stream.getAudioTracks(); // Array of audio tracks
-
+  var videoTracks = stream.getVideoTracks()[0]; // Array of video tracks
   let tracks = [];
-  tracks.push(videoTracks);
-  tracks.push(audioTracks);
+  tracks.push({ type: "video", capture: videoTracks, recv: false });
+
+  console.log("stream", stream);
+  console.log("videoTracks", videoTracks);
+  console.log("tracks", tracks);
 
   canvasPlugin.createOffer({
     tracks: tracks, // Pass the tracks here
-    // media: {video: videoTrack, audio: audioTrack},
+
     success: function (jsep) {
       let publish = {
         request: "publish",
@@ -470,7 +491,7 @@ function newTeacherRemoteFeed(id) {
       }
     },
     onremotetrack: function (track, mid, on) {
-      console.log("hit remote", track, on);
+      console.log("hit remote teacher", track, on);
 
       if (!on) {
         console.log("something something muted bs");
@@ -492,6 +513,85 @@ function newTeacherRemoteFeed(id) {
       console.log("Cleanup done for remote feed " + id);
     },
   });
+}
+
+function newCanvasRemoteFeed(id) {
+  janus.attach({
+    plugin: "janus.plugin.videoroom",
+    opaqueId: opaqueId,
+    success: function (pluginHandle) {
+      remoteCanvasFeedPlugin = pluginHandle;
+      subscribers.push(pluginHandle);
+      let subscribe = {
+        request: "join",
+        room: myRoom,
+        ptype: "subscriber",
+        streams: [
+          {
+            feed: id,
+          },
+        ],
+      };
+      remoteCanvasFeedPlugin.send({ message: subscribe });
+    },
+    onmessage: function (msg, jsep) {
+      console.log("event happened in new remote feed: ", msg);
+
+      if (jsep) {
+        remoteCanvasFeedPlugin.createAnswer({
+          jsep: jsep,
+          tracks: [{ type: "data" }],
+          success: function (jsep) {
+            let body = { request: "start", room: myRoom };
+            remoteCanvasFeedPlugin.send({ message: body, jsep: jsep });
+          },
+          error: function (error) {
+            console.error("WebRTC error:", error);
+          },
+        });
+      }
+    },
+    onremotetrack: function (track, mid, on) {
+      console.log("hit remote canvas", track, on);
+
+      if (!on) {
+        console.log("something something muted bs");
+        return;
+      }
+
+      // Add the video tracks
+      if (track.kind === "video") {
+        console.log("new cam id", id);
+        // Attach the stream to the remote video element
+        var stream = new MediaStream([track]);
+        const remoteVideo = document.getElementById("remoteVideoCanvas");
+
+        Janus.attachMediaStream(remoteVideo, stream);
+
+        // Start drawing the video on the canvas
+        drawVideoOnCanvas(remoteVideo);
+      }
+    },
+    oncleanup: function () {
+      console.log("Cleanup done for remote feed " + id);
+    },
+  });
+}
+
+function drawVideoOnCanvas(videoElement) {
+  const canvas = document.getElementById("canvas_view_1");
+  const ctx = canvas.getContext("2d");
+
+  function draw() {
+    // Draw the video frame on the canvas
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+    // Use requestAnimationFrame for smooth drawing
+    requestAnimationFrame(draw);
+  }
+
+  // Start the drawing loop
+  draw();
 }
 
 function joinAudioRoom() {

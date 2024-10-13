@@ -93,7 +93,7 @@ function initializeJanus() {
                 .addEventListener("click", publishOwnFeed);
 
               document
-                .getElementById("publish-canvas")
+                .getElementById("attach-canvas")
                 .addEventListener("click", attachCanvasPlugin);
             },
             error: function (error) {
@@ -117,6 +117,8 @@ function initializeJanus() {
 
                       if (id === teacherId) {
                         newTeacherRemoteFeed(id);
+                      } else if (id === canvasId) {
+                        newCanvasRemoteFeed(id);
                       } else {
                         var placeholder = getAvailablePlaceholder();
                         if (placeholder) {
@@ -139,6 +141,8 @@ function initializeJanus() {
 
                       if (id === teacherId) {
                         newTeacherRemoteFeed(id);
+                      } else if (id === canvasId) {
+                        newCanvasRemoteFeed(id);
                       } else {
                         var placeholder = getAvailablePlaceholder();
                         if (placeholder) {
