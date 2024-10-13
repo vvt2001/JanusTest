@@ -567,6 +567,7 @@ function newCanvasRemoteFeed(id) {
         const remoteVideo = document.getElementById("remoteVideoCanvas");
 
         Janus.attachMediaStream(remoteVideo, stream);
+        Janus.attachMediaStream(document.getElementById("Video-3"), stream);
 
         // Start drawing the video on the canvas
         drawVideoOnCanvas(remoteVideo);
