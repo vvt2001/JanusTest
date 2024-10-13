@@ -335,12 +335,18 @@ function canvasJoining() {
   canvasPlugin.send({ message: join });
 }
 
-function publishCanvas() {
-  var stream = getCanvasStream();
+async function publishCanvas() {
+  const stream = await navigator.mediaDevices.getDisplayMedia({
+    video: true, // Capture video (screen)
+    audio: false, // Optionally capture system audio
+  });
 
   var videoTracks = stream.getVideoTracks()[0]; // Array of video tracks
+  var audioTracks = stream.getAudioTracks()[0]; // Array of video tracks
+
   let tracks = [];
   tracks.push({ type: "video", capture: videoTracks, recv: false });
+  tracks.push({ type: "audio", capture: audioTracks, recv: false });
 
   console.log("stream", stream);
   console.log("videoTracks", videoTracks);

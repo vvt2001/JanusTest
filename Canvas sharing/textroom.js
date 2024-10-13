@@ -93,7 +93,7 @@ function initializeJanus() {
                 .addEventListener("click", publishOwnFeed);
 
               document
-                .getElementById("share-canvas")
+                .getElementById("share-screen")
                 .addEventListener("click", attachCanvasPlugin);
             },
             error: function (error) {
