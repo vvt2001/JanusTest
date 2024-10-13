@@ -301,12 +301,8 @@ function attachCanvasPlugin() {
       canvasPlugin = pluginHandle;
       console.log("Canvas plugin attached successfully.");
 
-      document
-        .getElementById("join-canvas")
-        .addEventListener("click", canvasJoining);
-      document
-        .getElementById("share-canvas")
-        .addEventListener("click", publishCanvas);
+      canvasJoining();
+      publishCanvas();
     },
     error: function (error) {
       console.error("Error attaching plugin...", error);
@@ -338,6 +334,7 @@ function canvasJoining() {
   console.log("join request:", join);
   canvasPlugin.send({ message: join });
 }
+
 function publishCanvas() {
   var stream = getCanvasStream();
 
@@ -355,6 +352,7 @@ function publishCanvas() {
     success: function (jsep) {
       let publish = {
         request: "publish",
+        videocodec: "vp9",
       };
 
       canvasPlugin.send({ message: publish, jsep: jsep });

@@ -233,9 +233,10 @@
         <button id="publish">Publish</button>
         <button id="unpublish">Unpublish</button>
         <button id="mute">Unmute</button>
-        <button id="attach-canvas">Attach canvas</button>
-        <button id="join-canvas">Join canvas</button>
+        <!-- <button id="attach-canvas">Attach canvas</button>
+        <button id="join-canvas">Join canvas</button> -->
         <button id="share-canvas">Share canvas</button>
+        <button id="draw-canvas">Draw canvas</button>
 
     </div>
 
@@ -303,14 +304,22 @@
             const ctx = canvas.getContext("2d");
 
             // Example of drawing something on the canvas
-            ctx.fillStyle = "green";
-            ctx.fillRect(10, 10, 100, 100);
+            ctx.fillStyle = "red";
+            ctx.fillRect(50, 50, 300, 300);
 
             // Capture stream from the canvas (30 fps is default, you can specify a different frame rate)
             const canvasStream = canvas.captureStream(30);
 
             return canvasStream;
         }
+        document.getElementById("draw-canvas").addEventListener("click", function() {
+            const canvas = document.getElementById("canvas_view_1");
+            const ctx = canvas.getContext("2d");
+
+            // Example of drawing something on the canvas
+            ctx.fillStyle = "red";
+            ctx.fillRect(300, 300, 200, 200);
+        }) 
 
     </script>
 
