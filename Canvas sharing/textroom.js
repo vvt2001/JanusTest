@@ -357,13 +357,15 @@ function createRoom() {
 }
 
 function joinRoom() {
-  console.log("currentRoomId", currentRoomId);
-  console.log("currentUsername", currentUsername);
-
+  var username = document.getElementById("myId").value;
+  if (!username) {
+    console.log("this field is required");
+    return;
+  }
   var joinRequest = {
     request: "join",
     room: parseInt(currentRoomId, 10), // Convert the input to a number
-    username: currentUsername,
+    username: username,
     transaction: Janus.randomString(12),
     textroom: "join",
   };
@@ -497,13 +499,15 @@ function createGroupRoom(plugin, groupRoomId) {
 }
 
 function joinGroupRoom(plugin, groupRoomId) {
-  console.log("currentRoomId", currentRoomId);
-  console.log("currentUsername", currentUsername);
-
+  var username = document.getElementById("myId").value;
+  if (!username) {
+    console.log("this field is required");
+    return;
+  }
   var joinRequest = {
     request: "join",
     room: parseInt(groupRoomId, 10), // Convert the input to a number
-    username: currentUsername,
+    username: username,
     transaction: Janus.randomString(12),
     textroom: "join",
   };
@@ -534,17 +538,18 @@ function splitGroup(groupCount) {
     room: currentRoomId, // The room ID you're querying
   };
 
-  textroomPlugin.data({
-    text: JSON.stringify(listRequest),
+  textroomPlugin.send({
+    message: listRequest,
     success: function (response) {
-      if (response.textroom === "participants") {
+      console.log("response", response);
+      if (response.participants) {
         // Clear the array before storing new participants
         participantList = [];
 
         // Store each participant's ID, username, and display name in the array
+        // username equals to id
         response.participants.forEach((participant) => {
           participantList.push({
-            id: participant.id, // Store the participant's ID
             username: participant.username,
             display: participant.display,
           });
@@ -583,11 +588,11 @@ function splitGroup(groupCount) {
       const leader = groupStudents[0];
 
       // Step 5: Create the group object
+      // username equals to id
       const group = {
-        groupId: leader.id, // Use the leader's id as the groupId
+        groupId: leader.username, // Use the leader's id as the groupId
         studentList: groupStudents, // The list of students in this group
         leader: {
-          id: leader.id,
           username: leader.username,
           display: leader.display,
         },
