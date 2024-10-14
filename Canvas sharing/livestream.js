@@ -338,7 +338,7 @@ function canvasJoining() {
 async function publishCanvas() {
   const stream = await navigator.mediaDevices.getDisplayMedia({
     video: true, // Capture video (screen)
-    audio: false, // Optionally capture system audio
+    audio: true, // Optionally capture system audio
   });
 
   var videoTracks = stream.getVideoTracks()[0]; // Array of video tracks
