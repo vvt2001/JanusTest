@@ -5,7 +5,7 @@ let teacherFeedPlugin = null;
 let remoteCanvasFeedPlugin = null;
 
 let audiobridgePlugin = null;
-let myRoom = 8132037336; // Room ID
+let myRoom = 345345345; // Room ID
 let myDisplay = "User-laptop";
 const server = "ws://143.198.212.46:8188/ws"; // Your Janus server URL
 // let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
@@ -358,7 +358,7 @@ async function publishCanvas() {
     success: function (jsep) {
       let publish = {
         request: "publish",
-        // videocodec: "vp9",
+        videocodec: "vp9",
       };
 
       canvasPlugin.send({ message: publish, jsep: jsep });
@@ -637,6 +637,7 @@ document.getElementById("createRoom").addEventListener("click", function () {
     request: "create",
     room: myRoom,
     publishers: 6,
+    videocodec: "vp9",
   };
   videoRoomPlugin.send({
     message: createVideoRoom,
