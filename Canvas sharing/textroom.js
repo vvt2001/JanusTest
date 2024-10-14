@@ -523,7 +523,7 @@ function joinGroupRoom(plugin, groupRoomId) {
   //   document.getElementById("joinUsernameInput").value = "";
 }
 
-function splitGroup(groupCount) {
+function splitGroup() {
   var groupCount = document.getElementById("group-count").value;
   if (!groupCount) {
     console.log("This field is required!"); // Alert if the field is empty
@@ -557,13 +557,20 @@ function splitGroup(groupCount) {
 
         // Log the list of participants
         console.log("Participants list with IDs:", participantList);
+
+        var groups = generateGroups(groupCount, participantList);
+        console.log("group", groups);
+
+        sendMessage(JSON.stringify(groups), currentRoomId, textroomPlugin);
       }
     },
     error: function (error) {
       console.error("Error retrieving participants:", error);
     },
   });
+}
 
+function generateGroups(groupCount, participantList) {
   // If there are more groups than students, reduce the group count to the number of students
   if (groupCount > participantList.length) {
     groupCount = participantList.length;
@@ -604,11 +611,8 @@ function splitGroup(groupCount) {
     }
   }
 
-  sendMessage(JSON.stringify(groups), currentRoomId, textroomPlugin);
-
-  console.log("group", groups);
+  return groups;
 }
-
 function sendMessage(message, roomId, plugin) {
   if (!message) return;
 
