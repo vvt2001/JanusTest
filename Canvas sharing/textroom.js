@@ -8,6 +8,7 @@ let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
 // let currentPostURL = "http://125.212.229.11:7070/messages";
 let opaqueId = "videoroomtest-" + Janus.randomString(12);
 let groupTextroomPluginList = [];
+let groupTextroomPlugin_learner = null;
 
 function initializeJanus() {
   if (janus) {
@@ -434,21 +435,18 @@ function createNewGroup(groupId) {
 }
 
 function joinNewGroup(groupId) {
-  let groupTextroomPlugin = null;
   janus.attach({
     plugin: "janus.plugin.textroom",
     opaqueId: opaqueId,
     success: function (pluginHandle) {
-      groupTextroomPlugin = pluginHandle;
-      groupTextroomPluginList.push(groupTextroomPlugin);
+      groupTextroomPlugin_learner = pluginHandle;
       console.log("Additional group TextRoom plugin attached successfully.");
 
       let body = { request: "setup" };
-      groupTextroomPlugin.send({ message: body });
+      groupTextroomPlugin_learner.send({ message: body });
 
       // Add event listeners for the buttons
-      createGroupRoom(groupTextroomPlugin, groupId);
-      joinGroupRoom(groupTextroomPlugin, groupId);
+      joinGroupRoom(groupTextroomPlugin_learner, groupId);
     },
     error: function (error) {
       console.error("Error attaching TextRoom plugin:", error);
@@ -467,12 +465,12 @@ function joinNewGroup(groupId) {
 
       if (jsep) {
         // Answer
-        groupTextroomPlugin.createAnswer({
+        groupTextroomPlugin_learner.createAnswer({
           jsep: jsep,
           tracks: [{ type: "data" }],
           success: function (jsep) {
             let body = { request: "ack" };
-            groupTextroomPlugin.send({ message: body, jsep: jsep });
+            groupTextroomPlugin_learner.send({ message: body, jsep: jsep });
           },
           error: function (error) {
             //console.log("WebRTC error:", error);
