@@ -43,6 +43,10 @@ function initializeJanus() {
               document
                 .getElementById("joinRoom")
                 .addEventListener("click", joinRoom);
+
+              document
+                .getElementById("split-group")
+                .addEventListener("click", splitGroup);
             },
             error: function (error) {
               console.error("Error attaching TextRoom plugin:", error);
@@ -516,17 +520,22 @@ function joinGroupRoom(plugin, groupRoomId) {
 }
 
 function splitGroup(groupCount) {
+  var groupCount = document.getElementById("group-count").value;
+  if (!groupCount) {
+    console.log("This field is required!"); // Alert if the field is empty
+    return;
+  }
   // Define an array to store the participants
   let participantList = [];
 
   // Send the request to list participants
   let listRequest = {
     request: "listparticipants",
-    room: ROOM_ID, // The room ID you're querying
+    room: currentRoomId, // The room ID you're querying
   };
 
-  textroomPlugin.send({
-    message: listRequest,
+  textroomPlugin.data({
+    text: JSON.stringify(listRequest),
     success: function (response) {
       if (response.textroom === "participants") {
         // Clear the array before storing new participants
