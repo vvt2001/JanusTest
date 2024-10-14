@@ -1,7 +1,6 @@
 var janus = null;
 var textroomPlugin = null;
 var dataChannelOpened = false;
-var messageQueue = [];
 let currentRoomId = 234234234;
 let currentUsername = "User-laptop";
 let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
@@ -44,10 +43,6 @@ function initializeJanus() {
               document
                 .getElementById("joinRoom")
                 .addEventListener("click", joinRoom);
-
-              //   document
-              //     .getElementById("sendMessage")
-              //     .addEventListener("click", sendMessage);
             },
             error: function (error) {
               console.error("Error attaching TextRoom plugin:", error);
@@ -55,7 +50,6 @@ function initializeJanus() {
             ondataopen: function () {
               //console.log("Data channel is now open!");
               dataChannelOpened = true;
-              processMessageQueue();
             },
             ondata: function (data) {
               console.log("Received data on DataChannel:", data);
@@ -404,7 +398,6 @@ function createNewGroup(groupId) {
     ondataopen: function () {
       //console.log("Data channel is now open!");
       dataChannelOpened = true;
-      processMessageQueue();
     },
     ondata: function (data) {
       console.log("Received data on DataChannel:", data);
@@ -454,7 +447,6 @@ function joinNewGroup(groupId) {
     ondataopen: function () {
       //console.log("Data channel is now open!");
       dataChannelOpened = true;
-      processMessageQueue();
     },
     ondata: function (data) {
       console.log("Received data on DataChannel:", data);
@@ -523,24 +515,97 @@ function joinGroupRoom(plugin, groupRoomId) {
   //   document.getElementById("joinUsernameInput").value = "";
 }
 
-function sendMessage() {
-  var message = document.getElementById("messageInput").value;
-  if (!message) return;
+function splitGroup(groupCount) {
+  // Define an array to store the participants
+  let participantList = [];
 
-  if (!dataChannelOpened) {
-    console.error("Data channel is not open yet, queueing message.");
-    messageQueue.push(message);
-    return;
+  // Send the request to list participants
+  let listRequest = {
+    request: "listparticipants",
+    room: ROOM_ID, // The room ID you're querying
+  };
+
+  textroomPlugin.send({
+    message: listRequest,
+    success: function (response) {
+      if (response.textroom === "participants") {
+        // Clear the array before storing new participants
+        participantList = [];
+
+        // Store each participant's ID, username, and display name in the array
+        response.participants.forEach((participant) => {
+          participantList.push({
+            id: participant.id, // Store the participant's ID
+            username: participant.username,
+            display: participant.display,
+          });
+        });
+
+        // Log the list of participants
+        console.log("Participants list with IDs:", participantList);
+      }
+    },
+    error: function (error) {
+      console.error("Error retrieving participants:", error);
+    },
+  });
+
+  // If there are more groups than students, reduce the group count to the number of students
+  if (groupCount > participantList.length) {
+    groupCount = participantList.length;
   }
+
+  // Step 1: Shuffle the participantList to randomize the group assignment
+  participantList = participantList.sort(() => Math.random() - 0.5);
+
+  // Step 2: Divide the students into groups
+  const groupSize = Math.ceil(participantList.length / groupCount);
+  const groups = [];
+
+  for (let i = 0; i < groupCount; i++) {
+    // Step 3: Assign students to the group
+    const groupStudents = participantList.slice(
+      i * groupSize,
+      (i + 1) * groupSize
+    );
+
+    if (groupStudents.length > 0) {
+      // Step 4: Select the first student as the leader
+      const leader = groupStudents[0];
+
+      // Step 5: Create the group object
+      const group = {
+        groupId: leader.id, // Use the leader's id as the groupId
+        studentList: groupStudents, // The list of students in this group
+        leader: {
+          id: leader.id,
+          username: leader.username,
+          display: leader.display,
+        },
+      };
+
+      createNewGroup(group.groupId);
+      // Add the group to the array of groups
+      groups.push(group);
+    }
+  }
+
+  sendMessage(JSON.stringify(groups), currentRoomId, textroomPlugin);
+
+  console.log("group", groups);
+}
+
+function sendMessage(message, roomId, plugin) {
+  if (!message) return;
 
   var request = {
     textroom: "message",
     transaction: Janus.randomString(12),
-    room: parseInt(currentRoomId, 10),
+    room: parseInt(roomId, 10),
     text: message,
   };
 
-  textroomPlugin.data({
+  plugin.data({
     text: JSON.stringify(request),
     success: function () {
       //console.log("Message broadcasted successfully!");
@@ -549,15 +614,6 @@ function sendMessage() {
       console.error("Error broadcasting message:", error);
     },
   });
-
-  document.getElementById("messageInput").value = "";
-}
-
-function processMessageQueue() {
-  while (messageQueue.length > 0) {
-    var message = messageQueue.shift();
-    sendMessage(message);
-  }
 }
 
 initializeJanus();
