@@ -632,6 +632,16 @@ function cleanupRemoteFeed(remoteFeed) {
   }
 }
 
+function switchAudioBridge(newRoomId) {
+  let changeroom = {
+    request: "changeroom",
+    room: newRoomId,
+    display: username,
+    id: parseInt(myId),
+  };
+  audiobridgePlugin.send({ message: changeroom });
+}
+
 document.getElementById("createRoom").addEventListener("click", function () {
   let createVideoRoom = {
     request: "create",

@@ -1,5 +1,5 @@
 var janus = null;
-var textroom = null;
+var textroomPlugin = null;
 var dataChannelOpened = false;
 var messageQueue = [];
 let currentRoomId = 8132037336;
@@ -7,6 +7,7 @@ let currentUsername = "User-laptop";
 let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
 // let currentPostURL = "http://125.212.229.11:7070/messages";
 let opaqueId = "videoroomtest-" + Janus.randomString(12);
+let groupTextroomPluginList = [];
 
 function initializeJanus() {
   if (janus) {
@@ -28,11 +29,11 @@ function initializeJanus() {
             plugin: "janus.plugin.textroom",
             opaqueId: opaqueId,
             success: function (pluginHandle) {
-              textroom = pluginHandle;
+              textroomPlugin = pluginHandle;
               console.log("TextRoom plugin attached successfully.");
 
               let body = { request: "setup" };
-              textroom.send({ message: body });
+              textroomPlugin.send({ message: body });
 
               // Add event listeners for the buttons
               document
@@ -64,12 +65,12 @@ function initializeJanus() {
 
               if (jsep) {
                 // Answer
-                textroom.createAnswer({
+                textroomPlugin.createAnswer({
                   jsep: jsep,
                   tracks: [{ type: "data" }],
                   success: function (jsep) {
                     let body = { request: "ack" };
-                    textroom.send({ message: body, jsep: jsep });
+                    textroomPlugin.send({ message: body, jsep: jsep });
                   },
                   error: function (error) {
                     //console.log("WebRTC error:", error);
@@ -350,7 +351,7 @@ function createRoom() {
     transaction: Janus.randomString(12),
   };
 
-  textroom.data({
+  textroomPlugin.data({
     text: JSON.stringify(createRoomRequest),
     error: function (error) {},
   });
@@ -368,7 +369,152 @@ function joinRoom() {
     textroom: "join",
   };
 
-  textroom.data({
+  textroomPlugin.data({
+    text: JSON.stringify(joinRequest),
+    error: function (error) {
+      //console.log(error);
+    },
+  });
+
+  //   document.getElementById("joinRoomIdInput").value = "";
+  //   document.getElementById("joinUsernameInput").value = "";
+}
+
+function createNewGroup(groupId) {
+  let groupTextroomPlugin = null;
+  janus.attach({
+    plugin: "janus.plugin.textroom",
+    opaqueId: opaqueId,
+    success: function (pluginHandle) {
+      groupTextroomPlugin = pluginHandle;
+      groupTextroomPluginList.push(groupTextroomPlugin);
+      console.log("Additional group TextRoom plugin attached successfully.");
+
+      let body = { request: "setup" };
+      groupTextroomPlugin.send({ message: body });
+
+      // Add event listeners for the buttons
+      createGroupRoom(groupTextroomPlugin, groupId);
+      joinGroupRoom(groupTextroomPlugin, groupId);
+    },
+    error: function (error) {
+      console.error("Error attaching TextRoom plugin:", error);
+    },
+    ondataopen: function () {
+      //console.log("Data channel is now open!");
+      dataChannelOpened = true;
+      processMessageQueue();
+    },
+    ondata: function (data) {
+      console.log("Received data on DataChannel:", data);
+      handleIncomingMessage(JSON.parse(data));
+    },
+    onmessage: function (msg, jsep) {
+      //console.log("Received message from Janus:", msg);
+
+      if (jsep) {
+        // Answer
+        groupTextroomPlugin.createAnswer({
+          jsep: jsep,
+          tracks: [{ type: "data" }],
+          success: function (jsep) {
+            let body = { request: "ack" };
+            groupTextroomPlugin.send({ message: body, jsep: jsep });
+          },
+          error: function (error) {
+            //console.log("WebRTC error:", error);
+          },
+        });
+      }
+    },
+    oncleanup: function () {
+      //console.log("Cleanup notification from Janus.");
+    },
+  });
+}
+
+function joinNewGroup(groupId) {
+  let groupTextroomPlugin = null;
+  janus.attach({
+    plugin: "janus.plugin.textroom",
+    opaqueId: opaqueId,
+    success: function (pluginHandle) {
+      groupTextroomPlugin = pluginHandle;
+      groupTextroomPluginList.push(groupTextroomPlugin);
+      console.log("Additional group TextRoom plugin attached successfully.");
+
+      let body = { request: "setup" };
+      groupTextroomPlugin.send({ message: body });
+
+      // Add event listeners for the buttons
+      createGroupRoom(groupTextroomPlugin, groupId);
+      joinGroupRoom(groupTextroomPlugin, groupId);
+    },
+    error: function (error) {
+      console.error("Error attaching TextRoom plugin:", error);
+    },
+    ondataopen: function () {
+      //console.log("Data channel is now open!");
+      dataChannelOpened = true;
+      processMessageQueue();
+    },
+    ondata: function (data) {
+      console.log("Received data on DataChannel:", data);
+      handleIncomingMessage(JSON.parse(data));
+    },
+    onmessage: function (msg, jsep) {
+      //console.log("Received message from Janus:", msg);
+
+      if (jsep) {
+        // Answer
+        groupTextroomPlugin.createAnswer({
+          jsep: jsep,
+          tracks: [{ type: "data" }],
+          success: function (jsep) {
+            let body = { request: "ack" };
+            groupTextroomPlugin.send({ message: body, jsep: jsep });
+          },
+          error: function (error) {
+            //console.log("WebRTC error:", error);
+          },
+        });
+      }
+    },
+    oncleanup: function () {
+      //console.log("Cleanup notification from Janus.");
+    },
+  });
+}
+
+function createGroupRoom(plugin, groupRoomId) {
+  const createRoomRequest = {
+    request: "create",
+    room: parseInt(groupRoomId, 10), // Convert the input to a number
+    description: `Live room ${currentRoomId}`, // Room description
+    publishers: 6, // Maximum number of publishers
+    textroom: "create",
+    transaction: Janus.randomString(12),
+  };
+
+  plugin.data({
+    text: JSON.stringify(createRoomRequest),
+    error: function (error) {},
+  });
+}
+
+function joinGroupRoom(plugin, groupRoomId) {
+  console.log("currentRoomId", currentRoomId);
+  console.log("currentUsername", currentUsername);
+
+  var joinRequest = {
+    request: "join",
+    room: parseInt(groupRoomId, 10), // Convert the input to a number
+    username: currentUsername,
+    transaction: Janus.randomString(12),
+    textroom: "join",
+  };
+
+  plugin.data({
     text: JSON.stringify(joinRequest),
     error: function (error) {
       //console.log(error);
@@ -396,7 +542,7 @@ function sendMessage() {
     text: message,
   };
 
-  textroom.data({
+  textroomPlugin.data({
     text: JSON.stringify(request),
     success: function () {
       //console.log("Message broadcasted successfully!");
