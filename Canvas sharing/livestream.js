@@ -576,6 +576,16 @@ function newCanvasRemoteFeed(id) {
         // Start drawing the video on the canvas
         drawVideoOnCanvas(remoteVideo);
       }
+
+      // Add the video tracks
+      if (track.kind === "audio") {
+        console.log("new audio id", id);
+        // Attach the stream to the remote video element
+        var stream = new MediaStream([track]);
+        const remoteAudio = document.getElementById("remoteAudioCanvas");
+
+        Janus.attachMediaStream(remoteAudio, stream);
+      }
     },
     oncleanup: function () {
       console.log("Cleanup done for remote feed " + id);
