@@ -203,15 +203,23 @@ async function handleIncomingMessage(msg) {
   if (msg["textroom"] === "message") {
     let data = JSON.parse(msg["text"]);
 
-    const objectList = data.content;
+    console.log("incoming data", data);
+
+    const content = data.content;
     let objNew, objOld;
 
     switch (data.type) {
+      case "SPLIT_GROUP":
+        var group = content.find((group) =>
+          group.studentList.some((student) => student.username === username)
+        );
+        joinNewGroup(group.groupId);
+
       case STATES.MODIFY_CANVAS.UPDATE:
-        objectList.data.forEach(async (objectItem, index) => {
+        content.data.forEach(async (objectItem, index) => {
           const obj = objectItem.json;
           const object = JSON.parse(obj);
-          switch (objectList.state) {
+          switch (content.state) {
             case STATES.MODIFY_OBJECT.ADD:
               console.log("hit event add object to canvas");
 

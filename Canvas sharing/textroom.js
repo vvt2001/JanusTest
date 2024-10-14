@@ -561,7 +561,12 @@ function splitGroup() {
         var groups = generateGroups(groupCount, participantList);
         console.log("group", groups);
 
-        sendMessage(JSON.stringify(groups), currentRoomId, textroomPlugin);
+        var message = {
+          type: "SPLIT_GROUP",
+          content: JSON.stringify(groups),
+        };
+
+        sendMessage(JSON.stringify(message), currentRoomId, textroomPlugin);
       }
     },
     error: function (error) {
