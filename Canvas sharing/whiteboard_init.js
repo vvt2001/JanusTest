@@ -212,7 +212,9 @@ async function handleIncomingMessage(msg) {
       var groupList = JSON.parse(content);
       console.log("groupList", groupList);
       var group = groupList.find((group) =>
-        group.studentList.some((student) => student.username === username)
+        group.studentList.some(
+          (student) => parseInt(student.username) === username
+        )
       );
 
       console.log("group", group);

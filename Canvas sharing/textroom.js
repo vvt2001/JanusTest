@@ -230,13 +230,14 @@ function initializeJanus() {
                 .addEventListener("click", function () {
                   event.preventDefault(); // Prevent form from submitting to a new page
                   username = document.getElementById("username").value;
+                  username = parseInt(username);
                   if (username) {
                     // Join the audio room
                     let register = {
                       request: "join",
                       room: currentRoomId,
                       display: username.toString(),
-                      id: parseInt(username),
+                      id: username,
                     };
                     audiobridgePlugin.send({ message: register });
                   } else {
@@ -374,6 +375,8 @@ function createRoom() {
 
 function joinRoom() {
   username = document.getElementById("username").value;
+  username = parseInt(username);
+
   if (!username) {
     console.log("this field is required");
     return;
@@ -381,7 +384,7 @@ function joinRoom() {
   var joinRequest = {
     request: "join",
     room: parseInt(currentRoomId, 10), // Convert the input to a number
-    username: username,
+    username: username.toString(),
     transaction: Janus.randomString(12),
     textroom: "join",
   };
@@ -513,6 +516,8 @@ function createGroupRoom(plugin, groupRoomId) {
 
 function joinGroupRoom(plugin, groupRoomId) {
   username = document.getElementById("username").value;
+  username = parseInt(username);
+
   if (!username) {
     console.log("this field is required");
     return;
@@ -520,7 +525,7 @@ function joinGroupRoom(plugin, groupRoomId) {
   var joinRequest = {
     request: "join",
     room: parseInt(groupRoomId, 10), // Convert the input to a number
-    username: username,
+    username: username.toString(),
     transaction: Janus.randomString(12),
     textroom: "join",
   };

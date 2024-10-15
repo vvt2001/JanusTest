@@ -597,13 +597,15 @@ function drawVideoOnCanvas(videoElement) {
 function joinAudioRoom(roomId, plugin) {
   event.preventDefault(); // Prevent form from submitting to a new page
   username = document.getElementById("username").value;
+  username = parseInt(username);
+
   if (username) {
     // Join the audio room
     let register = {
       request: "join",
       room: roomId,
       display: username.toString(),
-      id: parseInt(username),
+      id: username,
     };
     plugin.send({ message: register });
   } else {
@@ -632,7 +634,7 @@ function switchAudioBridge(newRoomId, plugin) {
     request: "changeroom",
     room: newRoomId,
     display: username.toString(),
-    id: parseInt(username),
+    id: username,
   };
   plugin.send({ message: changeroom });
 }
@@ -671,13 +673,15 @@ document.getElementById("createRoom").addEventListener("click", function () {
 document.getElementById("joinRoom").addEventListener("click", function (event) {
   event.preventDefault(); // Prevent form from submitting to a new page
   username = document.getElementById("username").value;
+  username = parseInt(username);
+
   if (username) {
     let join = {
       request: "join",
       room: currentRoomId,
       ptype: "publisher",
       display: username.toString(),
-      id: parseInt(username),
+      id: username,
     };
 
     console.log("join request:", join);
