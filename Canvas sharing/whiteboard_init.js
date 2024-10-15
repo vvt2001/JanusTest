@@ -135,8 +135,8 @@ const initCanvasEvents = (canvas) => {
           const list = [];
           list.push(obj);
 
-          const data = { state: STATES.MODIFY_OBJECT.ADD, content: list };
-
+          const content = { state: STATES.MODIFY_OBJECT.ADD, data: list };
+          const data = { type: STATES.MODIFY_CANVAS.UPDATE, content: content };
           sendModifyObject(JSON.stringify(data));
         }
         if (obj.isNotSend) {
@@ -184,7 +184,7 @@ const sendModifyObject = (message) => {
     text: message,
   };
 
-  textroom.data({
+  textroomPlugin.data({
     text: JSON.stringify(request),
     success: function () {},
     error: function (error) {

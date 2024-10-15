@@ -1,6 +1,6 @@
 var janus = null;
 var textroomPlugin = null;
-let currentRoomId = 234234234;
+let currentRoomId = 1171111388;
 let username = null;
 let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
 // let currentPostURL = "http://125.212.229.11:7070/messages";
