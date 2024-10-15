@@ -236,7 +236,7 @@ async function handleIncomingMessage(msg) {
 
                 objNew.needFillAnswer = true;
 
-                canvas.saveObject = false;
+                eldCustom.canvas.saveObject = false;
 
                 eldCustom.addObject(objNew);
 
