@@ -214,9 +214,13 @@ async function handleIncomingMessage(msg) {
       var group = groupList.find((group) =>
         group.studentList.some((student) => student.username === username)
       );
-      joinNewGroup(group.groupId);
-      createAudioBridge(group.groupId, audiobridgePlugin);
-      switchAudioBridge(group.groupId, audiobridgePlugin);
+
+      console.log("group", group);
+
+      var groupId = parseInt(group.groupId);
+      joinNewGroup(groupId);
+      createAudioBridge(groupId, audiobridgePlugin);
+      switchAudioBridge(groupId, audiobridgePlugin);
     } else {
       switch (data.type) {
         case STATES.MODIFY_CANVAS.UPDATE:

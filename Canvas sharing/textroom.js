@@ -624,7 +624,7 @@ function generateGroups(groupCount, participantList) {
         },
       };
 
-      createNewGroup(group.groupId);
+      createNewGroup(parseInt(group.groupId));
       // Add the group to the array of groups
       groups.push(group);
     }
