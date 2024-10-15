@@ -215,7 +215,7 @@ async function handleIncomingMessage(msg) {
         );
         joinNewGroup(group.groupId);
         createAudioBridge(group.groupId, audiobridgePlugin);
-        joinAudioRoom(group.groupId, audiobridgePlugin);
+        switchAudioBridge(group.groupId, audiobridgePlugin);
 
       case STATES.MODIFY_CANVAS.UPDATE:
         content.data.forEach(async (objectItem, index) => {

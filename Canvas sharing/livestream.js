@@ -5,8 +5,6 @@ let teacherFeedPlugin = null;
 let remoteCanvasFeedPlugin = null;
 
 let audiobridgePlugin = null;
-let currentRoomId = 234234234; // Room ID
-let myDisplay = "User-laptop";
 const server = "ws://143.198.212.46:8188/ws"; // Your Janus server URL
 // let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
 let subscribers = []; // Store list of subscriber handles
@@ -324,7 +322,7 @@ function canvasJoining() {
     request: "join",
     room: currentRoomId,
     ptype: "publisher",
-    display: myDisplay,
+    display: username.toString(),
     id: canvasId,
   };
 
@@ -629,14 +627,14 @@ function cleanupRemoteFeed(remoteFeed) {
   }
 }
 
-function switchAudioBridge(newRoomId) {
+function switchAudioBridge(newRoomId, plugin) {
   let changeroom = {
     request: "changeroom",
     room: newRoomId,
     display: username.toString(),
     id: parseInt(username),
   };
-  audiobridgePlugin.send({ message: changeroom });
+  plugin.send({ message: changeroom });
 }
 
 function createVideoRoom(roomId, plugin) {
@@ -678,7 +676,7 @@ document.getElementById("joinRoom").addEventListener("click", function (event) {
       request: "join",
       room: currentRoomId,
       ptype: "publisher",
-      display: myDisplay,
+      display: username.toString(),
       id: parseInt(username),
     };
 
