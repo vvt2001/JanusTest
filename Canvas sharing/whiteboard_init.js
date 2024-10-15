@@ -225,8 +225,9 @@ async function handleIncomingMessage(msg) {
           console.log("hit update canvas");
 
           content.data.forEach(async (objectItem, index) => {
-            const obj = objectItem.json;
-            const object = JSON.parse(obj);
+            // console.log("objectItem", objectItem);
+            // const obj = objectItem.json;
+            const object = objectItem;
             switch (content.state) {
               case STATES.MODIFY_OBJECT.ADD:
                 console.log("hit event add object to canvas");
