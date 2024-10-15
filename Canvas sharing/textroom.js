@@ -1,6 +1,5 @@
 var janus = null;
 var textroomPlugin = null;
-var dataChannelOpened = false;
 let currentRoomId = 234234234;
 let username = null;
 let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
@@ -8,6 +7,8 @@ let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
 let opaqueId = "videoroomtest-" + Janus.randomString(12);
 let groupTextroomPluginList = [];
 let groupTextroomPlugin_learner = null;
+let groupTextroomPlugin_test = null;
+
 let teacherId = 123;
 
 function initializeJanus() {
@@ -52,16 +53,14 @@ function initializeJanus() {
             error: function (error) {
               console.error("Error attaching TextRoom plugin:", error);
             },
-            ondataopen: function () {
-              //console.log("Data channel is now open!");
-              dataChannelOpened = true;
-            },
+
             ondata: function (data) {
               console.log("Received data on DataChannel:", data);
               handleIncomingMessage(JSON.parse(data));
             },
             onmessage: function (msg, jsep) {
-              //console.log("Received message from Janus:", msg);
+              console.log("Received message from Janus:", msg);
+              console.log("Received message from Janus:", jsep);
 
               if (jsep) {
                 // Answer
@@ -409,24 +408,16 @@ function createNewGroup(groupId) {
 
       let body = { request: "setup" };
       groupTextroomPlugin.send({ message: body });
-
-      // Add event listeners for the buttons
-      createGroupRoom(groupTextroomPlugin, groupId);
-      joinGroupRoom(groupTextroomPlugin, groupId);
     },
     error: function (error) {
       console.error("Error attaching TextRoom plugin:", error);
-    },
-    ondataopen: function () {
-      //console.log("Data channel is now open!");
-      dataChannelOpened = true;
     },
     ondata: function (data) {
       console.log("Received data on DataChannel:", data);
       handleIncomingMessage(JSON.parse(data));
     },
     onmessage: function (msg, jsep) {
-      //console.log("Received message from Janus:", msg);
+      console.log("Received message from createNewGroup:", msg);
 
       if (jsep) {
         // Answer
@@ -436,6 +427,9 @@ function createNewGroup(groupId) {
           success: function (jsep) {
             let body = { request: "ack" };
             groupTextroomPlugin.send({ message: body, jsep: jsep });
+
+            createGroupRoom(groupTextroomPlugin, groupId);
+            joinGroupRoom(groupTextroomPlugin, groupId);
           },
           error: function (error) {
             //console.log("WebRTC error:", error);
@@ -461,21 +455,17 @@ function joinNewGroup(groupId) {
       groupTextroomPlugin_learner.send({ message: body });
 
       // Add event listeners for the buttons
-      joinGroupRoom(groupTextroomPlugin_learner, groupId);
     },
     error: function (error) {
       console.error("Error attaching TextRoom plugin:", error);
     },
-    ondataopen: function () {
-      //console.log("Data channel is now open!");
-      dataChannelOpened = true;
-    },
+
     ondata: function (data) {
       console.log("Received data on DataChannel:", data);
       handleIncomingMessage(JSON.parse(data));
     },
     onmessage: function (msg, jsep) {
-      //console.log("Received message from Janus:", msg);
+      console.log("Received message from joinNewGroup:", msg);
 
       if (jsep) {
         // Answer
@@ -485,6 +475,8 @@ function joinNewGroup(groupId) {
           success: function (jsep) {
             let body = { request: "ack" };
             groupTextroomPlugin_learner.send({ message: body, jsep: jsep });
+
+            joinGroupRoom(groupTextroomPlugin_learner, groupId);
           },
           error: function (error) {
             //console.log("WebRTC error:", error);
@@ -659,3 +651,53 @@ function sendMessage(message, roomId, plugin) {
 }
 
 initializeJanus();
+
+document.getElementById("attach-group").addEventListener("click", function () {
+  janus.attach({
+    plugin: "janus.plugin.textroom",
+    opaqueId: opaqueId,
+    success: function (pluginHandle) {
+      groupTextroomPlugin_test = pluginHandle;
+      console.log("Additional group TextRoom plugin attached successfully.");
+
+      let body = { request: "setup" };
+      groupTextroomPlugin_test.send({ message: body });
+    },
+    error: function (error) {
+      console.error("Error attaching TextRoom plugin:", error);
+    },
+    ondata: function (data) {
+      console.log("Received data on DataChannel:", data);
+      handleIncomingMessage(JSON.parse(data));
+    },
+    onmessage: function (msg, jsep) {
+      console.log("Received message from createNewGroup:", msg);
+
+      if (jsep) {
+        // Answer
+        groupTextroomPlugin_test.createAnswer({
+          jsep: jsep,
+          tracks: [{ type: "data" }],
+          success: function (jsep) {
+            let body = { request: "ack" };
+            groupTextroomPlugin_test.send({ message: body, jsep: jsep });
+          },
+          error: function (error) {
+            //console.log("WebRTC error:", error);
+          },
+        });
+      }
+    },
+    oncleanup: function () {
+      //console.log("Cleanup notification from Janus.");
+    },
+  });
+});
+
+document.getElementById("create-group").addEventListener("click", function () {
+  createGroupRoom(groupTextroomPlugin_test, 123456);
+});
+
+document.getElementById("join-group").addEventListener("click", function () {
+  joinGroupRoom(groupTextroomPlugin_test, 123456);
+});
