@@ -210,7 +210,8 @@ async function handleIncomingMessage(msg) {
 
     switch (data.type) {
       case "SPLIT_GROUP":
-        var group = content.find((group) =>
+        var groupList = JSON.parse(content);
+        var group = groupList.find((group) =>
           group.studentList.some((student) => student.username === username)
         );
         joinNewGroup(group.groupId);

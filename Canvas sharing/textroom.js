@@ -591,7 +591,7 @@ function generateGroups(groupCount, participantList) {
     groupCount = participantList.length;
   }
 
-  const filteredList = participantList.filter(
+  var filteredList = participantList.filter(
     (participant) => participant.username !== teacherId
   );
 
