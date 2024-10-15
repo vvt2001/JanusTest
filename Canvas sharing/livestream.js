@@ -5,11 +5,10 @@ let teacherFeedPlugin = null;
 let remoteCanvasFeedPlugin = null;
 
 let audiobridgePlugin = null;
-let myRoom = 234234234; // Room ID
+let currentRoomId = 234234234; // Room ID
 let myDisplay = "User-laptop";
 const server = "ws://143.198.212.46:8188/ws"; // Your Janus server URL
 // let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
-let myId = null;
 let subscribers = []; // Store list of subscriber handles
 let isPublishing = false;
 const placeholders = [
@@ -43,9 +42,7 @@ const placeholders = [
 ];
 const waitingQueue = [];
 let isMuted = true;
-let username = "User_" + Math.floor(Math.random() * 1000);
 let isTeacher = true;
-let teacherId = 123;
 let canvasId = 69420;
 
 function getAvailablePlaceholder() {
@@ -117,7 +114,7 @@ function startFacecam(track) {
       placeholder.isOccupied = true;
       placeholder.videoTrackId = track.id;
       placeholder.videoTrack = track;
-      placeholder.userId = myId;
+      placeholder.userId = username;
       placeholder.remoteFeedPugin = videoRoomPlugin;
     }
     // Attach the stream to the local video element
@@ -222,7 +219,7 @@ function removeRemoteFacecam(userId) {
 
 function removeTeacherFacecam() {
   try {
-    if (myId === teacherId) {
+    if (username === teacherId) {
       console.log("Cleaning up the remote feed...");
       // Detach the remote feed from Janus
       videoRoomPlugin.detach({
@@ -325,7 +322,7 @@ function attachCanvasPlugin() {
 function canvasJoining() {
   let join = {
     request: "join",
-    room: myRoom,
+    room: currentRoomId,
     ptype: "publisher",
     display: myDisplay,
     id: canvasId,
@@ -405,7 +402,7 @@ function newRemoteFeed(id) {
       subscribers.push(pluginHandle);
       let subscribe = {
         request: "join",
-        room: myRoom,
+        room: currentRoomId,
         ptype: "subscriber",
         streams: [
           {
@@ -423,7 +420,7 @@ function newRemoteFeed(id) {
           jsep: jsep,
           tracks: [{ type: "data" }],
           success: function (jsep) {
-            let body = { request: "start", room: myRoom };
+            let body = { request: "start", room: currentRoomId };
             remotePlugin.send({ message: body, jsep: jsep });
           },
           error: function (error) {
@@ -467,7 +464,7 @@ function newTeacherRemoteFeed(id) {
       subscribers.push(pluginHandle);
       let subscribe = {
         request: "join",
-        room: myRoom,
+        room: currentRoomId,
         ptype: "subscriber",
         streams: [
           {
@@ -485,7 +482,7 @@ function newTeacherRemoteFeed(id) {
           jsep: jsep,
           tracks: [{ type: "data" }],
           success: function (jsep) {
-            let body = { request: "start", room: myRoom };
+            let body = { request: "start", room: currentRoomId };
             teacherFeedPlugin.send({ message: body, jsep: jsep });
           },
           error: function (error) {
@@ -528,7 +525,7 @@ function newCanvasRemoteFeed(id) {
       subscribers.push(pluginHandle);
       let subscribe = {
         request: "join",
-        room: myRoom,
+        room: currentRoomId,
         ptype: "subscriber",
         streams: [
           {
@@ -546,7 +543,7 @@ function newCanvasRemoteFeed(id) {
           jsep: jsep,
           tracks: [{ type: "data" }],
           success: function (jsep) {
-            let body = { request: "start", room: myRoom };
+            let body = { request: "start", room: currentRoomId };
             remoteCanvasFeedPlugin.send({ message: body, jsep: jsep });
           },
           error: function (error) {
@@ -599,18 +596,18 @@ function drawVideoOnCanvas(videoElement) {
   draw();
 }
 
-function joinAudioRoom() {
+function joinAudioRoom(roomId, plugin) {
   event.preventDefault(); // Prevent form from submitting to a new page
-  myId = document.getElementById("myId").value;
-  if (myId) {
+  username = document.getElementById("username").value;
+  if (username) {
     // Join the audio room
     let register = {
       request: "join",
-      room: myRoom,
-      display: username,
-      id: parseInt(myId),
+      room: roomId,
+      display: username.toString(),
+      id: parseInt(username),
     };
-    audiobridgePlugin.send({ message: register });
+    plugin.send({ message: register });
   } else {
     console.log("This field is required!"); // Alert if the field is empty
   }
@@ -636,46 +633,53 @@ function switchAudioBridge(newRoomId) {
   let changeroom = {
     request: "changeroom",
     room: newRoomId,
-    display: username,
-    id: parseInt(myId),
+    display: username.toString(),
+    id: parseInt(username),
   };
   audiobridgePlugin.send({ message: changeroom });
 }
 
-document.getElementById("createRoom").addEventListener("click", function () {
+function createVideoRoom(roomId, plugin) {
   let createVideoRoom = {
     request: "create",
-    room: myRoom,
+    room: roomId,
     publishers: 6,
     videocodec: "vp9",
   };
-  videoRoomPlugin.send({
+  plugin.send({
     message: createVideoRoom,
     success: function (result) {},
   });
+}
 
+function createAudioBridge(roomId, plugin) {
   let createAudioBridge = {
     request: "create",
-    room: myRoom,
+    room: roomId,
     description: "My audio room",
     audiolevel_event: true,
   };
-  audiobridgePlugin.send({
+  plugin.send({
     message: createAudioBridge,
     success: function (result) {},
   });
+}
+
+document.getElementById("createRoom").addEventListener("click", function () {
+  createVideoRoom(currentRoomId, videoRoomPlugin);
+  createAudioBridge(currentRoomId, audiobridgePlugin);
 });
 
 document.getElementById("joinRoom").addEventListener("click", function (event) {
   event.preventDefault(); // Prevent form from submitting to a new page
-  myId = document.getElementById("myId").value;
-  if (myId) {
+  username = document.getElementById("username").value;
+  if (username) {
     let join = {
       request: "join",
-      room: myRoom,
+      room: currentRoomId,
       ptype: "publisher",
       display: myDisplay,
-      id: parseInt(myId),
+      id: parseInt(username),
     };
 
     console.log("join request:", join);

@@ -214,6 +214,8 @@ async function handleIncomingMessage(msg) {
           group.studentList.some((student) => student.username === username)
         );
         joinNewGroup(group.groupId);
+        createAudioBridge(group.groupId, audiobridgePlugin);
+        joinAudioRoom(group.groupId, audiobridgePlugin);
 
       case STATES.MODIFY_CANVAS.UPDATE:
         content.data.forEach(async (objectItem, index) => {

@@ -2,12 +2,13 @@ var janus = null;
 var textroomPlugin = null;
 var dataChannelOpened = false;
 let currentRoomId = 234234234;
-let currentUsername = "User-laptop";
+let username = null;
 let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
 // let currentPostURL = "http://125.212.229.11:7070/messages";
 let opaqueId = "videoroomtest-" + Janus.randomString(12);
 let groupTextroomPluginList = [];
 let groupTextroomPlugin_learner = null;
+let teacherId = 123;
 
 function initializeJanus() {
   if (janus) {
@@ -104,7 +105,7 @@ function initializeJanus() {
               var event = msg["videoroom"];
               if (event) {
                 if (event === "joined") {
-                  myId = msg["id"];
+                  username = msg["id"];
 
                   // Subscribe to existing publishers
                   if (msg["publishers"]) {
@@ -158,7 +159,7 @@ function initializeJanus() {
                   if (msg["unpublished"] === "ok") {
                     console.log("unpublished", msg);
 
-                    if (myId === teacherId) {
+                    if (username === teacherId) {
                       removeTeacherFacecam();
                     } else {
                       stopFacecam();
@@ -193,7 +194,7 @@ function initializeJanus() {
                 return;
               }
               if (track.kind === "video") {
-                if (myId === teacherId) {
+                if (username === teacherId) {
                   startTeacherFacecam(track);
                 } else {
                   startFacecam(track);
@@ -226,7 +227,22 @@ function initializeJanus() {
 
               document
                 .getElementById("joinRoom")
-                .addEventListener("click", joinAudioRoom);
+                .addEventListener("click", function () {
+                  event.preventDefault(); // Prevent form from submitting to a new page
+                  username = document.getElementById("username").value;
+                  if (username) {
+                    // Join the audio room
+                    let register = {
+                      request: "join",
+                      room: currentRoomId,
+                      display: username.toString(),
+                      id: parseInt(username),
+                    };
+                    audiobridgePlugin.send({ message: register });
+                  } else {
+                    console.log("This field is required!"); // Alert if the field is empty
+                  }
+                });
             },
             error: function (error) {
               console.error("Error attaching plugin...", error);
@@ -357,7 +373,7 @@ function createRoom() {
 }
 
 function joinRoom() {
-  var username = document.getElementById("myId").value;
+  username = document.getElementById("username").value;
   if (!username) {
     console.log("this field is required");
     return;
@@ -376,9 +392,6 @@ function joinRoom() {
       //console.log(error);
     },
   });
-
-  //   document.getElementById("joinRoomIdInput").value = "";
-  //   document.getElementById("joinUsernameInput").value = "";
 }
 
 function createNewGroup(groupId) {
@@ -499,7 +512,7 @@ function createGroupRoom(plugin, groupRoomId) {
 }
 
 function joinGroupRoom(plugin, groupRoomId) {
-  var username = document.getElementById("myId").value;
+  username = document.getElementById("username").value;
   if (!username) {
     console.log("this field is required");
     return;
@@ -518,9 +531,6 @@ function joinGroupRoom(plugin, groupRoomId) {
       //console.log(error);
     },
   });
-
-  //   document.getElementById("joinRoomIdInput").value = "";
-  //   document.getElementById("joinUsernameInput").value = "";
 }
 
 function splitGroup() {
@@ -581,16 +591,20 @@ function generateGroups(groupCount, participantList) {
     groupCount = participantList.length;
   }
 
+  const filteredList = participantList.filter(
+    (participant) => participant.username !== teacherId
+  );
+
   // Step 1: Shuffle the participantList to randomize the group assignment
-  participantList = participantList.sort(() => Math.random() - 0.5);
+  filteredList = filteredList.sort(() => Math.random() - 0.5);
 
   // Step 2: Divide the students into groups
-  const groupSize = Math.ceil(participantList.length / groupCount);
+  const groupSize = Math.ceil(filteredList.length / groupCount);
   const groups = [];
 
   for (let i = 0; i < groupCount; i++) {
     // Step 3: Assign students to the group
-    const groupStudents = participantList.slice(
+    const groupStudents = filteredList.slice(
       i * groupSize,
       (i + 1) * groupSize
     );
