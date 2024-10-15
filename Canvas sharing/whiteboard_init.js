@@ -208,61 +208,65 @@ async function handleIncomingMessage(msg) {
     const content = data.content;
     let objNew, objOld;
 
-    switch (data.type) {
-      case "SPLIT_GROUP":
-        var groupList = JSON.parse(content);
-        var group = groupList.find((group) =>
-          group.studentList.some((student) => student.username === username)
-        );
-        joinNewGroup(group.groupId);
-        createAudioBridge(group.groupId, audiobridgePlugin);
-        switchAudioBridge(group.groupId, audiobridgePlugin);
+    if (data.type === "SPLIT_GROUP") {
+      var groupList = JSON.parse(content);
+      console.log("groupList", groupList);
+      var group = groupList.find((group) =>
+        group.studentList.some((student) => student.username === username)
+      );
+      joinNewGroup(group.groupId);
+      createAudioBridge(group.groupId, audiobridgePlugin);
+      switchAudioBridge(group.groupId, audiobridgePlugin);
+    } else {
+      switch (data.type) {
+        case STATES.MODIFY_CANVAS.UPDATE:
+          console.log("hit update canvas");
 
-      case STATES.MODIFY_CANVAS.UPDATE:
-        content.data.forEach(async (objectItem, index) => {
-          const obj = objectItem.json;
-          const object = JSON.parse(obj);
-          switch (content.state) {
-            case STATES.MODIFY_OBJECT.ADD:
-              console.log("hit event add object to canvas");
+          content.data.forEach(async (objectItem, index) => {
+            const obj = objectItem.json;
+            const object = JSON.parse(obj);
+            switch (content.state) {
+              case STATES.MODIFY_OBJECT.ADD:
+                console.log("hit event add object to canvas");
 
-              objNew = await DrawCustom.getObject(object);
+                objNew = await DrawCustom.getObject(object);
 
-              objNew.needFillAnswer = true;
+                objNew.needFillAnswer = true;
 
-              eldCustom.addObject(objNew);
+                eldCustom.addObject(objNew);
 
-              eldCustom.canvas.saveObject = true;
+                eldCustom.canvas.saveObject = true;
 
-              break;
-            case STATES.MODIFY_OBJECT.EDIT:
-              objOld = eldCustom.canvas.findObjectById(objectItem.objectId);
+                break;
+              case STATES.MODIFY_OBJECT.EDIT:
+                objOld = eldCustom.canvas.findObjectById(objectItem.objectId);
 
-              if (objOld) {
-                objectItem.ObjectId = objOld.ObjectId;
+                if (objOld) {
+                  objectItem.ObjectId = objOld.ObjectId;
 
-                eldCustom.canvas.remove(objOld);
-              }
+                  eldCustom.canvas.remove(objOld);
+                }
 
-              objNew = await DrawCustom.getObject(object);
+                objNew = await DrawCustom.getObject(object);
 
-              objNew.needFillAnswer = true;
+                objNew.needFillAnswer = true;
 
-              eldCustom.addObject(objNew);
-              eldCustom.canvas.saveObject = true;
+                eldCustom.addObject(objNew);
+                eldCustom.canvas.saveObject = true;
 
-              break;
-            case STATES.MODIFY_OBJECT.REMOVE:
-              objOld = eldCustom.canvas.findObjectById(objectItem.objectId);
+                break;
+              case STATES.MODIFY_OBJECT.REMOVE:
+                objOld = eldCustom.canvas.findObjectById(objectItem.objectId);
 
-              if (objOld) {
-                eldCustom.canvas.remove(objOld);
-              }
-              eldCustom.canvas.saveObject = true;
+                if (objOld) {
+                  eldCustom.canvas.remove(objOld);
+                }
+                eldCustom.canvas.saveObject = true;
 
-              break;
-          }
-        });
+                break;
+            }
+          });
+      }
     }
   } else {
     console.warn("Unexpected message format:", msg);
