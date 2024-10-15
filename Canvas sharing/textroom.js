@@ -589,7 +589,7 @@ function generateGroups(groupCount, participantList) {
   }
 
   var filteredList = participantList.filter(
-    (participant) => participant.username !== teacherId
+    (participant) => parseInt(participant.username) !== teacherId
   );
 
   // Step 1: Shuffle the participantList to randomize the group assignment

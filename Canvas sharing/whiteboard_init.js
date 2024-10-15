@@ -177,12 +177,6 @@ const initCanvasEvents = (canvas) => {
 const sendModifyObject = (message) => {
   if (!message) return;
 
-  if (!dataChannelOpened) {
-    console.error("Data channel is not open yet, queueing message.");
-    messageQueue.push(message);
-    return;
-  }
-
   var request = {
     textroom: "message",
     transaction: Janus.randomString(12),
@@ -209,20 +203,22 @@ async function handleIncomingMessage(msg) {
     let objNew, objOld;
 
     if (data.type === "SPLIT_GROUP") {
-      var groupList = JSON.parse(content);
-      console.log("groupList", groupList);
-      var group = groupList.find((group) =>
-        group.studentList.some(
-          (student) => parseInt(student.username) === username
-        )
-      );
+      if (username !== teacherId) {
+        var groupList = JSON.parse(content);
+        console.log("groupList", groupList);
+        var group = groupList.find((group) =>
+          group.studentList.some(
+            (student) => parseInt(student.username) === username
+          )
+        );
 
-      console.log("group", group);
+        console.log("group", group);
 
-      var groupId = parseInt(group.groupId);
-      joinNewGroup(groupId);
-      createAudioBridge(groupId, audiobridgePlugin);
-      switchAudioBridge(groupId, audiobridgePlugin);
+        var groupId = parseInt(group.groupId);
+        joinNewGroup(groupId);
+        createAudioBridge(groupId, audiobridgePlugin);
+        switchAudioBridge(groupId, audiobridgePlugin);
+      }
     } else {
       switch (data.type) {
         case STATES.MODIFY_CANVAS.UPDATE:
