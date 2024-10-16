@@ -527,6 +527,8 @@ function createGroupRoom(plugin, groupRoomId) {
     text: JSON.stringify(createRoomRequest),
     error: function (error) {},
   });
+
+  console.log("group room id created", groupRoomId);
 }
 
 function joinGroupRoom(plugin, groupRoomId) {
@@ -551,6 +553,8 @@ function joinGroupRoom(plugin, groupRoomId) {
       //console.log(error);
     },
   });
+
+  console.log("group room id created", groupRoomId);
 }
 
 function splitGroup() {
