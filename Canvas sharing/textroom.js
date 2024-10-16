@@ -45,9 +45,11 @@ function initializeJanus() {
                 .getElementById("joinRoom")
                 .addEventListener("click", joinRoom);
 
-              document
-                .getElementById("split-group")
-                .addEventListener("click", splitGroup);
+              if (username === teacherId) {
+                document
+                  .getElementById("split-group")
+                  .addEventListener("click", splitGroup);
+              }
             },
             error: function (error) {
               console.error("Error attaching TextRoom plugin:", error);
@@ -402,7 +404,11 @@ async function createNewGroup(groupId) {
     opaqueId: opaqueId,
     success: async function (pluginHandle) {
       groupTextroomPlugin = pluginHandle;
-      groupTextroomPluginList.push(groupTextroomPlugin);
+      var groupTextroomObject = {
+        plugin: groupTextroomPlugin,
+        groupId: groupId,
+      };
+      groupTextroomPluginList.push(groupTextroomObject);
       console.log(
         `Additional group TextRoom plugin attached successfully #${groupId}.`
       );
@@ -606,16 +612,19 @@ async function splitGroup() {
         var groups = await generateGroups(groupCount, participantList);
         console.log("group", groups);
 
-        var message = {
-          type: "SPLIT_GROUP",
-          content: JSON.stringify(groups),
-        };
+        //Wait for room creation to complete before sending joining message
+        setTimeout(async () => {
+          var message = {
+            type: "SPLIT_GROUP",
+            content: JSON.stringify(groups),
+          };
 
-        await sendMessage(
-          JSON.stringify(message),
-          currentRoomId,
-          textroomPlugin
-        );
+          await sendMessage(
+            JSON.stringify(message),
+            currentRoomId,
+            textroomPlugin
+          );
+        }, 3000); // 3000ms = 3 seconds
       }
     },
     error: function (error) {
