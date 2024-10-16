@@ -216,7 +216,7 @@ async function handleIncomingMessage(msg) {
 
         var groupId = parseInt(group.groupId);
         joinNewGroup(groupId);
-        createAudioBridge(groupId, audiobridgePlugin);
+        createAudioBridge(groupId, audiobridgePlugin, false);
         switchAudioBridge(groupId, audiobridgePlugin);
       }
     } else {

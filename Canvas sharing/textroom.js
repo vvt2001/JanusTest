@@ -403,7 +403,9 @@ function createNewGroup(groupId) {
     success: function (pluginHandle) {
       groupTextroomPlugin = pluginHandle;
       groupTextroomPluginList.push(groupTextroomPlugin);
-      console.log("Additional group TextRoom plugin attached successfully.");
+      console.log(
+        `Additional group TextRoom plugin attached successfully #${groupId}.`
+      );
 
       let body = { request: "setup" };
       groupTextroomPlugin.send({ message: body });
@@ -448,7 +450,9 @@ function joinNewGroup(groupId) {
     opaqueId: opaqueId,
     success: function (pluginHandle) {
       groupTextroomPlugin_learner = pluginHandle;
-      console.log("Additional group TextRoom plugin attached successfully.");
+      console.log(
+        `Additional group TextRoom plugin learner attached successfully #${groupId}.`
+      );
 
       let body = { request: "setup" };
       groupTextroomPlugin_learner.send({ message: body });
@@ -554,7 +558,7 @@ function joinGroupRoom(plugin, groupRoomId) {
     },
   });
 
-  console.log("group room id created", groupRoomId);
+  console.log("group room id joined", groupRoomId);
 }
 
 function splitGroup() {

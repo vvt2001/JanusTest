@@ -662,12 +662,12 @@ function createVideoRoom(roomId, plugin) {
   });
 }
 
-function createAudioBridge(roomId, plugin) {
+function createAudioBridge(roomId, plugin, is_audiolevel_event) {
   let createAudioBridge = {
     request: "create",
     room: roomId,
     description: "My audio room",
-    audiolevel_event: true,
+    audiolevel_event: is_audiolevel_event,
   };
   plugin.send({
     message: createAudioBridge,
@@ -677,7 +677,7 @@ function createAudioBridge(roomId, plugin) {
 
 document.getElementById("createRoom").addEventListener("click", function () {
   createVideoRoom(currentRoomId, videoRoomPlugin);
-  createAudioBridge(currentRoomId, audiobridgePlugin);
+  createAudioBridge(currentRoomId, audiobridgePlugin, true);
 });
 
 document.getElementById("joinRoom").addEventListener("click", function (event) {
