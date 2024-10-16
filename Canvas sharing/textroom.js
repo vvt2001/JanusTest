@@ -409,6 +409,9 @@ async function createNewGroup(groupId) {
 
       let body = { request: "setup" };
       await groupTextroomPlugin.send({ message: body });
+
+      await createGroupRoom(groupTextroomPlugin, groupId);
+      await joinGroupRoom(groupTextroomPlugin, groupId);
     },
     error: function (error) {
       console.error("Error attaching TextRoom plugin:", error);
@@ -428,9 +431,6 @@ async function createNewGroup(groupId) {
           success: async function (jsep) {
             let body = { request: "ack" };
             await groupTextroomPlugin.send({ message: body, jsep: jsep });
-
-            await createGroupRoom(groupTextroomPlugin, groupId);
-            await joinGroupRoom(groupTextroomPlugin, groupId);
           },
           error: function (error) {
             //console.log("WebRTC error:", error);
@@ -456,6 +456,8 @@ async function joinNewGroup(groupId) {
 
       let body = { request: "setup" };
       await groupTextroomPlugin_learner.send({ message: body });
+
+      await joinGroupRoom(groupTextroomPlugin_learner, groupId);
 
       // Add event listeners for the buttons
       document
@@ -507,8 +509,6 @@ async function joinNewGroup(groupId) {
               message: body,
               jsep: jsep,
             });
-
-            await joinGroupRoom(groupTextroomPlugin_learner, groupId);
           },
           error: function (error) {
             //console.log("WebRTC error:", error);
