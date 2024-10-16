@@ -611,7 +611,11 @@ async function splitGroup() {
           content: JSON.stringify(groups),
         };
 
-        sendMessage(JSON.stringify(message), currentRoomId, textroomPlugin);
+        await sendMessage(
+          JSON.stringify(message),
+          currentRoomId,
+          textroomPlugin
+        );
       }
     },
     error: function (error) {
@@ -667,7 +671,7 @@ async function generateGroups(groupCount, participantList) {
 
   return groups;
 }
-function sendMessage(message, roomId, plugin) {
+async function sendMessage(message, roomId, plugin) {
   if (!message) return;
 
   var request = {
@@ -677,7 +681,7 @@ function sendMessage(message, roomId, plugin) {
     text: message,
   };
 
-  plugin.data({
+  await plugin.data({
     text: JSON.stringify(request),
     success: function () {
       //console.log("Message broadcasted successfully!");
