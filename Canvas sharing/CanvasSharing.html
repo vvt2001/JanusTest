@@ -68,29 +68,12 @@
             margin: 0;
             overflow: hidden; /* Prevent scrolling */
         }
-        .canvas-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
         canvas {
             display: block; /* Remove default margin */
             width: 100%;
             height: 100%;
         }
-        .controls {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 10000;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
-            color: white;
-        }
+
         .controls button {
             margin: 5px;
         }
@@ -146,13 +129,13 @@
     }
 
     .canvas-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-        }
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
     canvas {
         display: block; /* Remove default margin */
         width: 100%;
@@ -181,27 +164,52 @@
         cursor: pointer;
     }
     #Scrollable {
-            height: 100%;
-            overflow-y: auto; /* scrolling */
-            overflow-x: hidden; /* scrolling */
-        }
+        height: 100%;
+        overflow-y: auto; /* scrolling */
+        overflow-x: hidden; /* scrolling */
+        flex: 1;
+    }
+    #Container {
+        height: 100%;
+        overflow-y: auto; /* scrolling */
+        overflow-x: hidden; /* scrolling */
+        display: flex;
+        flex-direction: row; /* Ensure the clones are placed in a row */
+        justify-content: center; /* Center the clones horizontally */
+        align-items: center; /* Center the clones vertically if needed */
+    }
+    #Wrapper {
+        height: 100%;
+        overflow-y: auto; /* scrolling */
+        overflow-x: hidden; /* scrolling */
+    }
+    .cloned-scrollable {
+    margin: 0 5px; /* Add some spacing between each clone */
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1); /* Optional shadow for styling */
+    }
+    .shadow-sm {
+        height: 100%;
+        width: 100%;
+    }
 </style>
 </head>
 <body>
-    <!-- Whiteboard (Full screen) -->
-    <div class="w-full h-full flex flex-col justify-center items-center overflow-x-hidden scrollable overflow-y-auto" id="Scrollable">
-        <div id="Wrapper" class="w-full min-h-full scrollable flex flex-col justify-center items-center relative" style="position: relative;">
-            <div class="shadow-sm" id="canvas_section_1" style="position: absolute;">
-                <canvas id="canvas_view_1"></canvas>
-            </div>
-            <div class="shadow-sm hidden" id="canvas_section_2" style="position: absolute;">
-                <canvas id="canvas_view_2"></canvas>
-            </div>
-            <div class="shadow-sm hidden" id="canvas_section_3" style="position: absolute;">
-                <canvas id="canvas_view_3"></canvas>
+    <div id="Container" class="w-full h-full flex overflow-hidden" >
+        <!-- Whiteboard (Full screen) -->
+        <div id="Scrollable" class="w-full h-full flex flex-col justify-center items-center overflow-x-hidden scrollable overflow-y-auto" >
+            <div id="Wrapper" class="w-full min-h-full scrollable flex flex-col justify-center items-center relative" style="position: relative;">
+                <div class="shadow-sm" id="canvas_section_1" style="position: absolute;">
+                    <canvas id="canvas_view_1"></canvas>
+                </div>
+                <div class="shadow-sm hidden" id="canvas_section_2" style="position: absolute;">
+                    <canvas id="canvas_view_2"></canvas>
+                </div>
+                <div class="shadow-sm hidden" id="canvas_section_3" style="position: absolute;">
+                    <canvas id="canvas_view_3"></canvas>
+                </div>
             </div>
         </div>
-    </div>    
+    </div>
 
     <video id="remoteVideoCanvas" autoplay playsinline style="display: none;"></video> <!-- Hidden video element -->
 
@@ -238,6 +246,10 @@
         <button id="share-screen">Share screen</button>
         <input type="text" id="group-count" name="group-count" required>
         <button id="split-group">Split group</button>
+
+        <!-- Button to trigger splitting the canvas -->
+        <input id="cloneCount" type="number" min="1" placeholder="Number of canvases">
+        <button id="cloneCanvasBtn">Split Whiteboard</button>
     </div>
 
     <script type="text/javascript" src="textroom.js" ></script>
@@ -298,6 +310,70 @@
         });
 
     </script>
+    <script>
+document.getElementById('cloneCanvasBtn').addEventListener('click', function() {
+    // Get the number of clones from the input
+    const numberOfClones = parseInt(document.getElementById('cloneCount').value);
 
+    // Validate the input
+    if (isNaN(numberOfClones) || numberOfClones <= 0) {
+        alert("Please enter a valid number of clones.");
+        return;
+    }
+
+    // Reference to the original Scrollable div and the container
+    const originalScrollable = document.getElementById('Scrollable');
+    const container = document.getElementById('Container');
+
+    // Hide the original Scrollable element
+    originalScrollable.style.display = 'none';
+
+    // Clear previous clones (if any)
+    const existingClones = document.querySelectorAll('.cloned-scrollable');
+    existingClones.forEach(clone => clone.remove());
+
+    // Set the container to display cloned elements side by side
+    container.style.display = 'flex';
+    container.style.flexDirection = 'row';
+    container.style.justifyContent = 'center'; // Align clones horizontally centered
+
+    // Calculate width for each clone to fit side by side, keeping the ratio
+    const cloneWidth = 100 / numberOfClones; // % width divided by number of clones
+
+    // Loop to create the specified number of clones
+    for (let i = 1; i <= numberOfClones; i++) {
+        // Clone the original Scrollable div
+        const clonedWhiteboard = originalScrollable.cloneNode(true);
+
+        // Adjust the cloned IDs and add a class to identify them as clones
+        clonedWhiteboard.id = `Scrollable_clone_${i}`;
+        clonedWhiteboard.classList.add('cloned-scrollable');
+
+        // Adjust the IDs of inner canvas sections to be unique
+        const clonedCanvas1 = clonedWhiteboard.querySelector('#canvas_section_1');
+        clonedCanvas1.id = `canvas_section_1_clone_${i}`;
+        
+        const clonedCanvas2 = clonedWhiteboard.querySelector('#canvas_section_2');
+        clonedCanvas2.id = `canvas_section_2_clone_${i}`;
+        
+        const clonedCanvas3 = clonedWhiteboard.querySelector('#canvas_section_3');
+        clonedCanvas3.id = `canvas_section_3_clone_${i}`;
+
+        // Set the width for each clone so they fit side by side while keeping height ratio
+        clonedWhiteboard.style.width = cloneWidth + "%";
+        const containerWidth = window.innerWidth * (cloneWidth / 100);
+        const height = (containerWidth * 9) / 16; // Calculate height for 16:9 ratio
+        clonedWhiteboard.style.height = height + "px";
+        clonedWhiteboard.style.flex = "0 0 " + cloneWidth + "%"; // Flex-basis for proper size
+        clonedWhiteboard.style.display = "block"; // Make sure clones are visible
+
+        // Append the cloned whiteboard to the container
+        container.appendChild(clonedWhiteboard);
+    }
+
+    console.log(`Cloned the whiteboard ${numberOfClones} times and arranged them side by side.`);
+});
+
+    </script>
 </body>
 </html>
