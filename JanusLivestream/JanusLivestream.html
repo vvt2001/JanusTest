@@ -256,7 +256,7 @@
 
         function removeTeacherFacecam() {
             try {
-                if (isTeacher) {
+                if (parseInt(myId) === teacherId) {
                     console.log("Cleaning up the remote feed...");
                     // Detach the remote feed from Janus
                     videoRoomPlugin.detach({
@@ -411,7 +411,7 @@
                                         if (msg["unpublished"] === "ok") {
                                             console.log("unpublished", msg)
 
-                                            if(isTeacher) {
+                                            if(parseInt(myId)===teacherId) {
                                                 removeTeacherFacecam();
                                             }
                                             else {
@@ -448,7 +448,7 @@
                                     return;
                                 }
                                 if(track.kind === 'video'){
-                                    if(isTeacher){
+                                    if(parseInt(myId)===teacherId){
                                         startTeacherFacecam(track);
                                     }
                                     else {
