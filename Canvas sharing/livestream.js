@@ -637,6 +637,16 @@ function switchAudioBridge(newRoomId, plugin) {
     id: username,
   };
   plugin.send({ message: changeroom });
+
+  let mute = {
+    request: "configure",
+    muted: true,
+  };
+  plugin.send({ message: mute });
+
+  isMuted = true; // Toggle the mute status
+
+  document.getElementById("mute").innerHTML = isMuted ? "Unmute" : "Mute";
 }
 
 function createVideoRoom(roomId, plugin) {
