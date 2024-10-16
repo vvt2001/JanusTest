@@ -58,6 +58,7 @@ const STATES = {
     CHAT_PRIVATE: "CHAT_PRIVATE",
   },
 };
+let currentGroupId = null;
 
 const extentLibPrototype = (eldraw, EldCustom, eldCustom) => {
   EldCustom.prototype.addObject = function (obj, canvas) {
@@ -214,10 +215,25 @@ async function handleIncomingMessage(msg) {
 
         console.log("group", group);
 
-        var groupId = parseInt(group.groupId);
-        await joinNewGroup(groupId);
-        createAudioBridge(groupId, audiobridgePlugin, false);
-        switchAudioBridge(groupId, audiobridgePlugin);
+        var currentGroupId = parseInt(group.groupId);
+        await joinNewGroup(currentGroupId);
+        createAudioBridge(currentGroupId, audiobridgePlugin, false);
+        switchAudioBridge(currentGroupId, audiobridgePlugin);
+      }
+    }
+    if (data.type === "DELETE_GROUP") {
+      if (username !== teacherId) {
+        groupTextroomPlugin_learner.data({
+          text: JSON.stringify({
+            textroom: "leave",
+            room: currentGroupId,
+            username: username,
+          }),
+          success: function () {
+            groupTextroomPlugin_learner.detach();
+          },
+        });
+        switchAudioBridge(currentRoomId, audiobridgePlugin);
       }
     } else {
       switch (data.type) {

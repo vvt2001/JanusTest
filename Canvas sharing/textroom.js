@@ -45,11 +45,9 @@ function initializeJanus() {
                 .getElementById("joinRoom")
                 .addEventListener("click", joinRoom);
 
-              if (username === teacherId) {
-                document
-                  .getElementById("split-group")
-                  .addEventListener("click", splitGroup);
-              }
+              document
+                .getElementById("split-group")
+                .addEventListener("click", splitGroup);
             },
             error: function (error) {
               console.error("Error attaching TextRoom plugin:", error);
@@ -702,3 +700,26 @@ async function sendMessage(message, roomId, plugin) {
 }
 
 initializeJanus();
+
+document
+  .getElementById("delete-group")
+  .addEventListener("click", async function () {
+    var message = {
+      type: "DELETE_GROUP",
+    };
+
+    await sendMessage(JSON.stringify(message), currentRoomId, textroomPlugin);
+
+    groupTextroomPluginList.forEach((element) => {
+      element.plugin.data({
+        text: JSON.stringify({
+          textroom: "leave",
+          room: element.groupId,
+          username: username,
+        }),
+        success: function () {
+          element.plugin.detach();
+        },
+      });
+    });
+  });
