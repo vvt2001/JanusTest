@@ -395,12 +395,12 @@ function joinRoom() {
   });
 }
 
-function createNewGroup(groupId) {
+async function createNewGroup(groupId) {
   let groupTextroomPlugin = null;
-  janus.attach({
+  await janus.attach({
     plugin: "janus.plugin.textroom",
     opaqueId: opaqueId,
-    success: function (pluginHandle) {
+    success: async function (pluginHandle) {
       groupTextroomPlugin = pluginHandle;
       groupTextroomPluginList.push(groupTextroomPlugin);
       console.log(
@@ -408,7 +408,7 @@ function createNewGroup(groupId) {
       );
 
       let body = { request: "setup" };
-      groupTextroomPlugin.send({ message: body });
+      await groupTextroomPlugin.send({ message: body });
     },
     error: function (error) {
       console.error("Error attaching TextRoom plugin:", error);
@@ -417,20 +417,20 @@ function createNewGroup(groupId) {
       console.log("Received data on DataChannel:", data);
       handleIncomingMessage(JSON.parse(data));
     },
-    onmessage: function (msg, jsep) {
+    onmessage: async function (msg, jsep) {
       console.log("Received message from createNewGroup:", msg);
 
       if (jsep) {
         // Answer
-        groupTextroomPlugin.createAnswer({
+        await groupTextroomPlugin.createAnswer({
           jsep: jsep,
           tracks: [{ type: "data" }],
-          success: function (jsep) {
+          success: async function (jsep) {
             let body = { request: "ack" };
-            groupTextroomPlugin.send({ message: body, jsep: jsep });
+            await groupTextroomPlugin.send({ message: body, jsep: jsep });
 
-            createGroupRoom(groupTextroomPlugin, groupId);
-            joinGroupRoom(groupTextroomPlugin, groupId);
+            await createGroupRoom(groupTextroomPlugin, groupId);
+            await joinGroupRoom(groupTextroomPlugin, groupId);
           },
           error: function (error) {
             //console.log("WebRTC error:", error);
@@ -444,44 +444,46 @@ function createNewGroup(groupId) {
   });
 }
 
-function joinNewGroup(groupId) {
-  janus.attach({
+async function joinNewGroup(groupId) {
+  await janus.attach({
     plugin: "janus.plugin.textroom",
     opaqueId: opaqueId,
-    success: function (pluginHandle) {
+    success: async function (pluginHandle) {
       groupTextroomPlugin_learner = pluginHandle;
       console.log(
         `Additional group TextRoom plugin learner attached successfully #${groupId}.`
       );
 
       let body = { request: "setup" };
-      groupTextroomPlugin_learner.send({ message: body });
+      await groupTextroomPlugin_learner.send({ message: body });
 
       // Add event listeners for the buttons
-      document.getElementById("chat").addEventListener("click", function () {
-        var message = document.getElementById("group-chat").value;
-        if (!message) {
-          console.log("This field is required!"); // Alert if the field is empty
-          return;
-        }
+      document
+        .getElementById("chat")
+        .addEventListener("click", async function () {
+          var message = document.getElementById("group-chat").value;
+          if (!message) {
+            console.log("This field is required!"); // Alert if the field is empty
+            return;
+          }
 
-        var request = {
-          textroom: "message",
-          transaction: Janus.randomString(12),
-          room: parseInt(groupId, 10),
-          text: message,
-        };
+          var request = {
+            textroom: "message",
+            transaction: Janus.randomString(12),
+            room: parseInt(groupId, 10),
+            text: message,
+          };
 
-        groupTextroomPlugin_learner.data({
-          text: JSON.stringify(request),
-          success: function () {
-            //console.log("Message broadcasted successfully!");
-          },
-          error: function (error) {
-            console.error("Error broadcasting message:", error);
-          },
+          await groupTextroomPlugin_learner.data({
+            text: JSON.stringify(request),
+            success: function () {
+              //console.log("Message broadcasted successfully!");
+            },
+            error: function (error) {
+              console.error("Error broadcasting message:", error);
+            },
+          });
         });
-      });
     },
     error: function (error) {
       console.error("Error attaching TextRoom plugin:", error);
@@ -491,19 +493,22 @@ function joinNewGroup(groupId) {
       console.log("Received data on DataChannel:", data);
       handleIncomingMessage(JSON.parse(data));
     },
-    onmessage: function (msg, jsep) {
+    onmessage: async function (msg, jsep) {
       console.log("Received message from joinNewGroup:", msg);
 
       if (jsep) {
         // Answer
-        groupTextroomPlugin_learner.createAnswer({
+        await groupTextroomPlugin_learner.createAnswer({
           jsep: jsep,
           tracks: [{ type: "data" }],
-          success: function (jsep) {
+          success: async function (jsep) {
             let body = { request: "ack" };
-            groupTextroomPlugin_learner.send({ message: body, jsep: jsep });
+            await groupTextroomPlugin_learner.send({
+              message: body,
+              jsep: jsep,
+            });
 
-            joinGroupRoom(groupTextroomPlugin_learner, groupId);
+            await joinGroupRoom(groupTextroomPlugin_learner, groupId);
           },
           error: function (error) {
             //console.log("WebRTC error:", error);
@@ -517,7 +522,7 @@ function joinNewGroup(groupId) {
   });
 }
 
-function createGroupRoom(plugin, groupRoomId) {
+async function createGroupRoom(plugin, groupRoomId) {
   const createRoomRequest = {
     request: "create",
     room: parseInt(groupRoomId, 10), // Convert the input to a number
@@ -527,15 +532,16 @@ function createGroupRoom(plugin, groupRoomId) {
     transaction: Janus.randomString(12),
   };
 
-  plugin.data({
+  await plugin.data({
     text: JSON.stringify(createRoomRequest),
+    success: function (response) {
+      console.log("group room id created", groupRoomId);
+    },
     error: function (error) {},
   });
-
-  console.log("group room id created", groupRoomId);
 }
 
-function joinGroupRoom(plugin, groupRoomId) {
+async function joinGroupRoom(plugin, groupRoomId) {
   username = document.getElementById("username").value;
   username = parseInt(username);
 
@@ -551,17 +557,18 @@ function joinGroupRoom(plugin, groupRoomId) {
     textroom: "join",
   };
 
-  plugin.data({
+  await plugin.data({
     text: JSON.stringify(joinRequest),
+    success: function (response) {
+      console.log("group room id joined", groupRoomId);
+    },
     error: function (error) {
       //console.log(error);
     },
   });
-
-  console.log("group room id joined", groupRoomId);
 }
 
-function splitGroup() {
+async function splitGroup() {
   var groupCount = document.getElementById("group-count").value;
   if (!groupCount) {
     console.log("This field is required!"); // Alert if the field is empty
@@ -576,9 +583,9 @@ function splitGroup() {
     room: currentRoomId, // The room ID you're querying
   };
 
-  textroomPlugin.send({
+  await textroomPlugin.send({
     message: listRequest,
-    success: function (response) {
+    success: async function (response) {
       console.log("response", response);
       if (response.participants) {
         // Clear the array before storing new participants
@@ -596,7 +603,7 @@ function splitGroup() {
         // Log the list of participants
         console.log("Participants list with IDs:", participantList);
 
-        var groups = generateGroups(groupCount, participantList);
+        var groups = await generateGroups(groupCount, participantList);
         console.log("group", groups);
 
         var message = {
@@ -613,7 +620,7 @@ function splitGroup() {
   });
 }
 
-function generateGroups(groupCount, participantList) {
+async function generateGroups(groupCount, participantList) {
   // If there are more groups than students, reduce the group count to the number of students
   if (groupCount > participantList.length) {
     groupCount = participantList.length;
@@ -652,7 +659,7 @@ function generateGroups(groupCount, participantList) {
         },
       };
 
-      createNewGroup(parseInt(group.groupId));
+      await createNewGroup(parseInt(group.groupId));
       // Add the group to the array of groups
       groups.push(group);
     }
