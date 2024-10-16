@@ -7,7 +7,6 @@ let currentWebsocketURL = "ws://143.198.212.46:8188/ws";
 let opaqueId = "videoroomtest-" + Janus.randomString(12);
 let groupTextroomPluginList = [];
 let groupTextroomPlugin_learner = null;
-let groupTextroomPlugin_test = null;
 
 let teacherId = 123;
 
@@ -455,6 +454,30 @@ function joinNewGroup(groupId) {
       groupTextroomPlugin_learner.send({ message: body });
 
       // Add event listeners for the buttons
+      document.getElementById("chat").addEventListener("click", function () {
+        var message = document.getElementById("group-chat").value;
+        if (!message) {
+          console.log("This field is required!"); // Alert if the field is empty
+          return;
+        }
+
+        var request = {
+          textroom: "message",
+          transaction: Janus.randomString(12),
+          room: parseInt(groupId, 10),
+          text: message,
+        };
+
+        groupTextroomPlugin_learner.data({
+          text: JSON.stringify(request),
+          success: function () {
+            //console.log("Message broadcasted successfully!");
+          },
+          error: function (error) {
+            console.error("Error broadcasting message:", error);
+          },
+        });
+      });
     },
     error: function (error) {
       console.error("Error attaching TextRoom plugin:", error);
