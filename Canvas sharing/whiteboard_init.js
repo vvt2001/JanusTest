@@ -215,7 +215,7 @@ async function handleIncomingMessage(msg) {
         console.log("group", group);
 
         var groupId = parseInt(group.groupId);
-        joinNewGroup(groupId);
+        await joinNewGroup(groupId);
         createAudioBridge(groupId, audiobridgePlugin, false);
         switchAudioBridge(groupId, audiobridgePlugin);
       }
