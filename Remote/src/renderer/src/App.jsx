@@ -115,7 +115,7 @@ function App() {
         if (data.type === 'KEY_PRESS') {
           var key = JSON.parse(content)
     
-          window.electron.ipcRenderer.send("KEY_PRESS", key);
+          window.electron.ipcRenderer.send("KEY_PRESS", {key: key});
         }
         if (data.type === 'MOUSE_CLICK') {
           window.electron.ipcRenderer.send("MOUSE_CLICK", {});
@@ -134,7 +134,7 @@ function App() {
           const hostX = mouseMovement.clientX * ratioX
           const hostY = mouseMovement.clientY * ratioY
     
-          window.electron.ipcRenderer.send("MOUSE_MOVE", {hostX, hostY});
+          window.electron.ipcRenderer.send("MOUSE_MOVE", {hostX: hostX, hostY: hostY});
         }
       }
     }
