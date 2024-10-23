@@ -125,7 +125,7 @@ function App() {
         }
         if (data.type === 'MOUSE_MOVE') {
           var mouseMovement = JSON.parse(content)
-    
+  
           const {
             displaySize: { width, height }
           } = clientSelectedScreen
@@ -284,8 +284,9 @@ function App() {
     const screenSources = await window.electron.ipcRenderer.invoke("GET_SCREEN_SOURCE")
 
     const selectedScreen = screenSources[0]
+    console.log("selectedScreen", selectedScreen)
     clientSelectedScreen = selectedScreen
-    
+
     console.log("selectedScreen", selectedScreen)
 
     const stream = await navigator.mediaDevices.getUserMedia({

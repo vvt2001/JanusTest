@@ -84,8 +84,12 @@ app.whenReady().then(() => {
 
           try {
             const screenshot = item.thumbnail.toDataURL()
+            displays = screen.getAllDisplays()
+            const displaySize = displays.filter((display) => `${display.id}` === item.display_id)[0]
+              .size
 
             item.screenshot = screenshot
+            item.displaySize = displaySize
           } catch (error) {
             console.log(error)
           }
