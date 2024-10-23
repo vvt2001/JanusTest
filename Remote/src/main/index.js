@@ -90,7 +90,8 @@ app.whenReady().then(() => {
   ipcMain.handle('GET_SCREEN_SOURCE', () => {
     return new Promise(async (resolve) => {
       const resource = await desktopCapturer.getSources({
-        types: ['screen', 'window', 'audio', 'tab']
+        // types: ['screen', 'window', 'audio', 'tab']
+        types: ['screen']
       })
 
       if (resource && resource.length) {
