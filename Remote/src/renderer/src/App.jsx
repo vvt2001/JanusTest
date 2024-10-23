@@ -111,7 +111,7 @@ function App() {
   
       const content = data.content
   
-      if (parseInt(username) == parseInt(remoteId)){
+      if (parseInt(username) == parseInt(data.remoteId)){
         if (data.type === 'KEY_PRESS') {
           var key = JSON.parse(content)
     
