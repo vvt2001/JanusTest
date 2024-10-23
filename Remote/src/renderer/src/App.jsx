@@ -15,6 +15,8 @@ function App() {
   var remotePlugin = null;
   var isRemoting = false;
   var remoteId = null;
+  let clientSelectedScreen
+
   async function sendMessage(message, roomId, plugin) {
     if (!message) return;
   
@@ -124,9 +126,9 @@ function App() {
         if (data.type === 'MOUSE_MOVE') {
           var mouseMovement = JSON.parse(content)
     
-          // const {
-          //   displaySize: { width, height }
-          // } = clientSelectedScreen
+          const {
+            displaySize: { width, height }
+          } = clientSelectedScreen
     
           const ratioX = width / mouseMovement.clientWidth
           const ratioY = height / mouseMovement.clientHeight
@@ -282,6 +284,7 @@ function App() {
     const screenSources = await window.electron.ipcRenderer.invoke("GET_SCREEN_SOURCE")
 
     const selectedScreen = screenSources[0]
+    clientSelectedScreen = selectedScreen
     
     console.log("selectedScreen", selectedScreen)
 

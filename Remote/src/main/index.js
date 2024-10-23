@@ -37,22 +37,6 @@ function createWindow() {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
-
-  mainWindow.once('ready-to-show', () => {
-    displays = screen.getAllDisplays()
-
-    mainWindow.show()
-    mainWindow.setPosition(0, 0)
-
-    desktopCapturer
-      .getSources({
-        types: ['screen']
-        // types: ['window', 'screen']
-      })
-      .then((sources) => {
-        console.log(sources)
-      })
-  })
 }
 
 // This method will be called when Electron has finished
