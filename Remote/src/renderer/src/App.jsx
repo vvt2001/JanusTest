@@ -124,9 +124,9 @@ function App() {
         if (data.type === 'MOUSE_MOVE') {
           var mouseMovement = JSON.parse(content)
     
-          const {
-            displaySize: { width, height }
-          } = clientSelectedScreen
+          // const {
+          //   displaySize: { width, height }
+          // } = clientSelectedScreen
     
           const ratioX = width / mouseMovement.clientWidth
           const ratioY = height / mouseMovement.clientHeight
