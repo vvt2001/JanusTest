@@ -17,7 +17,7 @@ function App() {
   var remoteId = null;
   let clientSelectedScreen
 
-  async function sendMessage(message, roomId, plugin) {
+  async function sendRemoteMessage(message, roomId, plugin) {
     if (!message) return;
   
     var request = {
@@ -25,6 +25,8 @@ function App() {
       transaction: Janus.randomString(12),
       room: parseInt(roomId, 10),
       text: message,
+      ack: false,
+      to: parseInt(remoteId, 10),
     };
   
     await plugin.data({
@@ -138,6 +140,36 @@ function App() {
     
           window.electron.ipcRenderer.send("MOUSE_MOVE", {hostX: hostX, hostY: hostY});
         }
+        if (data.type === 'START_DRAG') {
+          var mouseMovement = JSON.parse(content)
+  
+          const {
+            displaySize: { width, height }
+          } = clientSelectedScreen
+    
+          const ratioX = width / mouseMovement.clientWidth
+          const ratioY = height / mouseMovement.clientHeight
+    
+          const hostX = mouseMovement.clientX * ratioX
+          const hostY = mouseMovement.clientY * ratioY
+    
+          window.electron.ipcRenderer.send("START_DRAG", {hostX: hostX, hostY: hostY});
+        }
+        if (data.type === 'DROP') {
+          var mouseMovement = JSON.parse(content)
+  
+          const {
+            displaySize: { width, height }
+          } = clientSelectedScreen
+    
+          const ratioX = width / mouseMovement.clientWidth
+          const ratioY = height / mouseMovement.clientHeight
+    
+          const hostX = mouseMovement.clientX * ratioX
+          const hostY = mouseMovement.clientY * ratioY
+    
+          window.electron.ipcRenderer.send("DROP", {hostX: hostX, hostY: hostY});
+        }
       }
     }
   }
@@ -200,82 +232,6 @@ function App() {
         console.log("Cleanup done for remote feed " + remoteId);
       },
     });
-  }
-
-  const handleMouseClick = async (e) => {
-    if(isRemoting)
-
-{    console.log("clicked")
-    // socket.emit('mouse_click', {})
-
-    var message = {
-      type: "MOUSE_CLICK",
-      remoteId: remoteId,
-      content: JSON.stringify({}),
-    };
-
-    await sendMessage(
-      JSON.stringify(message),
-      currentRoomId,
-      textroomPlugin
-    );}
-  }
-
-  const handleMouseMove = async ({
-    clientX, clientY
-  }) => {
-    if(isRemoting)
-    {  
-      console.log("moved")
-      // socket.emit('mouse_move', {
-      //   clientX, clientY,
-      //   clientWidth: window.innerWidth,
-      //   clientHeight: window.innerHeight,
-      // })
-
-      var mouseMovement = {
-        clientX, clientY,
-        clientWidth: window.innerWidth,
-        clientHeight: window.innerHeight,
-      };
-
-      var message = {
-        type: "MOUSE_MOVE",
-        remoteId: remoteId,
-        content: JSON.stringify(mouseMovement),
-      };
-
-      await sendMessage(
-        JSON.stringify(message),
-        currentRoomId,
-        textroomPlugin
-      );
-    }
-  }
-
-  const handleKeyPress = async ({
-    e
-  }) => {
-    if(isRemoting)
-
-{    console.log("pressed")
-    // socket.emit('mouse_move', {
-    //   clientX, clientY,
-    //   clientWidth: window.innerWidth,
-    //   clientHeight: window.innerHeight,
-    // })
-
-    var message = {
-      type: "KEY_PRESS",
-      remoteId: remoteId,
-      content: JSON.stringify(e.key),
-    };
-
-    await sendMessage(
-      JSON.stringify(message),
-      currentRoomId,
-      textroomPlugin
-    );}
   }
   
   async function publishCanvas() {
@@ -403,9 +359,7 @@ function App() {
                   videoRoomPlugin.handleRemoteJsep({ jsep: jsep });
                 }
               },
-              onlocaltrack: function (track, on) {
-
-              },
+              onlocaltrack: function (track, on) {},
               onremotetrack: function (track) {},
               oncleanup: function () {
                 console.log("Cleanup done.");
@@ -423,6 +377,141 @@ function App() {
     });
   }, []);
 
+    const handleMouseClick = async () => {
+    if(isRemoting) {
+      console.log("clicked")
+      // socket.emit('mouse_click', {})
+
+      var message = {
+        type: "MOUSE_CLICK",
+        remoteId: remoteId,
+        content: JSON.stringify({}),
+      };
+
+      await sendRemoteMessage(
+        JSON.stringify(message),
+        currentRoomId,
+        textroomPlugin
+      );
+    }
+  }
+
+  const handleMouseMove = async ({ clientX, clientY }) => {
+    if(isRemoting) {  
+      console.log("moved")
+      // socket.emit('mouse_move', {
+      //   clientX, clientY,
+      //   clientWidth: window.innerWidth,
+      //   clientHeight: window.innerHeight,
+      // })
+
+      const { width, height } = videoRef.current.getBoundingClientRect();
+
+      var mouseMovement = {
+        clientX, clientY,
+        clientWidth: width,
+        clientHeight: height,
+      };
+
+      var message = {
+        type: "MOUSE_MOVE",
+        remoteId: remoteId,
+        content: JSON.stringify(mouseMovement),
+      };
+
+      await sendRemoteMessage(
+        JSON.stringify(message),
+        currentRoomId,
+        textroomPlugin
+      );
+    }
+  }
+
+  const handleKeyPress = async ({ event }) => {
+    if(isRemoting) {    
+      console.log("pressed")
+      // socket.emit('mouse_move', {
+      //   clientX, clientY,
+      //   clientWidth: window.innerWidth,
+      //   clientHeight: window.innerHeight,
+      // })
+
+      var message = {
+        type: "KEY_PRESS",
+        remoteId: remoteId,
+        content: JSON.stringify(event.key),
+      };
+
+      await sendRemoteMessage(
+        JSON.stringify(message),
+        currentRoomId,
+        textroomPlugin
+      );
+    }
+  }
+
+  // Handle the start of dragging
+  const handleDragStart = async (event) => {
+    if(isRemoting) {    
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const { width, height } = videoRef.current.getBoundingClientRect();
+
+      var mouseStart = {
+        startX, startY,
+        clientWidth: width,
+        clientHeight: height,
+      };
+
+      var message = {
+        type: "START_DRAG",
+        remoteId: remoteId,
+        content: JSON.stringify(mouseStart),
+      };
+
+      await sendRemoteMessage(
+        JSON.stringify(message),
+        currentRoomId,
+        textroomPlugin
+      );
+    }
+  };
+
+  // Handle dragging over the drop zone
+  const handleDragOver = (event) => {
+    if(isRemoting) {    
+      event.preventDefault(); // Necessary to allow dropping
+    }
+  };
+
+  // Handle the drop event
+  const handleDrop = async (event) => {
+    if(isRemoting) {    
+      event.preventDefault();
+      const endX = event.clientX;
+      const endY = event.clientY;
+      const { width, height } = videoRef.current.getBoundingClientRect();
+
+      var mouseDrop = {
+        endX, endY,
+        clientWidth: width,
+        clientHeight: height,
+      };
+
+      var message = {
+        type: "DROP",
+        remoteId: remoteId,
+        content: JSON.stringify(mouseDrop),
+      };
+
+      await sendRemoteMessage(
+        JSON.stringify(message),
+        currentRoomId,
+        textroomPlugin
+      );
+    }
+  };
+
   return (
     <div className="App">
       <>
@@ -439,12 +528,22 @@ function App() {
             display: 'block',
             backgroundColor: 'black',
             margin: 0,
+            width: '100%',    // Adjust this width based on your container size
+            height: 'auto',    // This ensures the container resizes based on width
           }}
           onMouseMove={handleMouseMove}
           onClick={handleMouseClick}
           onKeyDown={handleKeyPress}
+          onDragStart={handleDragStart}
+          onDrag={handleDragOver}
+          onDragEnd={handleDrop}
         >
-          <video ref={videoRef} className="video">video not available</video>
+          <video style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain'
+          }}
+           ref={videoRef} className="video">video not available</video>
         </div>
       </>
     </div>

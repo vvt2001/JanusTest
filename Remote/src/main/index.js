@@ -70,6 +70,18 @@ app.whenReady().then(() => {
 
     robot.moveMouse(data.hostX, data.hostY)
   })
+  ipcMain.on('START_DRAG', (event, data) => {
+    console.log('startdrag')
+
+    robot.moveMouse(data.hostX, data.hostY)
+    robot.mouseToggle('down')
+  })
+  ipcMain.on('DROP', (event, data) => {
+    console.log('drop')
+
+    robot.moveMouse(data.hostX, data.hostY)
+    robot.mouseToggle('up')
+  })
 
   ipcMain.handle('GET_SCREEN_SOURCE', () => {
     return new Promise(async (resolve) => {
