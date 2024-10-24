@@ -153,9 +153,6 @@ function App() {
           const hostX = mouseMovement.startX * ratioX
           const hostY = mouseMovement.startY * ratioY
     
-          console.log("startdragdata", mouseMovement, hostY)
-          console.log("startdragdata", mouseMovement, hostY)
-
           window.electron.ipcRenderer.send("START_DRAG", {hostX: hostX, hostY: hostY});
         }
         if (data.type === 'DROP') {
@@ -401,7 +398,7 @@ function App() {
 
   const handleMouseMove = async ({ clientX, clientY }) => {
     if(isRemoting) {  
-      console.log("moved")
+      console.log("moved", event)
       // socket.emit('mouse_move', {
       //   clientX, clientY,
       //   clientWidth: window.innerWidth,
@@ -430,9 +427,9 @@ function App() {
     }
   }
 
-  const handleKeyPress = async ({ event }) => {
+  const handleKeyPress = async ({ key }) => {
     if(isRemoting) {    
-      console.log("pressed")
+      console.log("pressed", key)
       // socket.emit('mouse_move', {
       //   clientX, clientY,
       //   clientWidth: window.innerWidth,
@@ -442,7 +439,7 @@ function App() {
       var message = {
         type: "KEY_PRESS",
         remoteId: remoteId,
-        content: JSON.stringify(event.key),
+        content: JSON.stringify(key),
       };
 
       await sendRemoteMessage(
@@ -538,9 +535,10 @@ function App() {
             width: '100%',    // Adjust this width based on your container size
             height: 'auto',    // This ensures the container resizes based on width
           }}
+          tabIndex={0}
           onMouseMove={handleMouseMove}
           onClick={handleMouseClick}
-          onKeyDown={handleKeyPress}
+          onKeyUp={handleKeyPress}
           onMouseDown={handleDragStart}
           // onDrag={handleDragOver}
           onMouseUp={handleDrop}
