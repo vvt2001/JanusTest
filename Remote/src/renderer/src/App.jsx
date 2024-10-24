@@ -26,7 +26,7 @@ function App() {
       room: parseInt(roomId, 10),
       text: message,
       ack: false,
-      to: parseInt(remoteId, 10),
+      to: remoteId.toString(),
     };
   
     await plugin.data({
@@ -457,6 +457,8 @@ function App() {
       const startY = event.clientY;
       const { width, height } = videoRef.current.getBoundingClientRect();
 
+      console.log(startX, startY)
+
       var mouseStart = {
         startX, startY,
         clientWidth: width,
@@ -477,12 +479,12 @@ function App() {
     }
   };
 
-  // Handle dragging over the drop zone
-  const handleDragOver = (event) => {
-    if(isRemoting) {    
-      event.preventDefault(); // Necessary to allow dropping
-    }
-  };
+  // // Handle dragging over the drop zone
+  // const handleDragOver = (event) => {
+  //   if(isRemoting) {    
+  //     event.preventDefault(); // Necessary to allow dropping
+  //   }
+  // };
 
   // Handle the drop event
   const handleDrop = async (event) => {
@@ -491,6 +493,8 @@ function App() {
       const endX = event.clientX;
       const endY = event.clientY;
       const { width, height } = videoRef.current.getBoundingClientRect();
+
+      console.log(endX, endY)
 
       var mouseDrop = {
         endX, endY,
@@ -534,9 +538,9 @@ function App() {
           onMouseMove={handleMouseMove}
           onClick={handleMouseClick}
           onKeyDown={handleKeyPress}
-          onDragStart={handleDragStart}
-          onDrag={handleDragOver}
-          onDragEnd={handleDrop}
+          onMouseDown={handleDragStart}
+          // onDrag={handleDragOver}
+          onMouseUp={handleDrop}
         >
           <video style={{
             width: '100%',

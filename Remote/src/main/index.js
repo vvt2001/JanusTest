@@ -71,13 +71,13 @@ app.whenReady().then(() => {
     robot.moveMouse(data.hostX, data.hostY)
   })
   ipcMain.on('START_DRAG', (event, data) => {
-    console.log('startdrag')
+    console.log('startdrag', data.hostX, data.hostY)
 
     robot.moveMouse(data.hostX, data.hostY)
     robot.mouseToggle('down')
   })
   ipcMain.on('DROP', (event, data) => {
-    console.log('drop')
+    console.log('drop', data.hostX, data.hostY)
 
     robot.moveMouse(data.hostX, data.hostY)
     robot.mouseToggle('up')
