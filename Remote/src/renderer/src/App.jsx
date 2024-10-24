@@ -150,9 +150,12 @@ function App() {
           const ratioX = width / mouseMovement.clientWidth
           const ratioY = height / mouseMovement.clientHeight
     
-          const hostX = mouseMovement.clientX * ratioX
-          const hostY = mouseMovement.clientY * ratioY
+          const hostX = mouseMovement.startX * ratioX
+          const hostY = mouseMovement.startY * ratioY
     
+          console.log("startdragdata", mouseMovement, hostY)
+          console.log("startdragdata", mouseMovement, hostY)
+
           window.electron.ipcRenderer.send("START_DRAG", {hostX: hostX, hostY: hostY});
         }
         if (data.type === 'DROP') {
@@ -165,8 +168,8 @@ function App() {
           const ratioX = width / mouseMovement.clientWidth
           const ratioY = height / mouseMovement.clientHeight
     
-          const hostX = mouseMovement.clientX * ratioX
-          const hostY = mouseMovement.clientY * ratioY
+          const hostX = mouseMovement.endX * ratioX
+          const hostY = mouseMovement.endY * ratioY
     
           window.electron.ipcRenderer.send("DROP", {hostX: hostX, hostY: hostY});
         }
