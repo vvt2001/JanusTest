@@ -117,9 +117,9 @@ function App() {
   
       if (parseInt(username) == parseInt(data.remoteId)){
         if (data.type === 'KEY_PRESS') {
-          var key = JSON.parse(content)
+          var keyCode = JSON.parse(content)
     
-          window.electron.ipcRenderer.send("KEY_PRESS", {key: key});
+          window.electron.ipcRenderer.send("KEY_PRESS", {keyCode: keyCode});
         }
         if (data.type === 'MOUSE_CLICK') {
           window.electron.ipcRenderer.send("MOUSE_CLICK", {});
@@ -427,9 +427,9 @@ function App() {
     }
   }
 
-  const handleKeyPress = async ({ key }) => {
+  const handleKeyPress = async ({ keyCode }) => {
     if(isRemoting) {    
-      console.log("pressed", key)
+      console.log("pressed", keyCode)
       // socket.emit('mouse_move', {
       //   clientX, clientY,
       //   clientWidth: window.innerWidth,
@@ -439,7 +439,7 @@ function App() {
       var message = {
         type: "KEY_PRESS",
         remoteId: remoteId,
-        content: JSON.stringify(key),
+        content: JSON.stringify(keyCode),
       };
 
       await sendRemoteMessage(

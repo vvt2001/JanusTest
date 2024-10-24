@@ -58,7 +58,7 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('KEY_PRESS', (event, data) => {
     console.log('keyTap')
-    robot.keyTap(data.key)
+    robot.keyTap(data.keyCode)
   })
   ipcMain.on('MOUSE_CLICK', (event, data) => {
     console.log('mouseClick')
