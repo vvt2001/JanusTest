@@ -16,6 +16,8 @@ function App() {
   var isRemoting = false;
   var remoteId = null;
   let clientSelectedScreen
+  var allowKeyboard = false;
+  const allowKeyboardButtonRef = useRef(null);
 
   async function sendRemoteMessage(message, roomId, plugin) {
     if (!message) return;
@@ -116,26 +118,22 @@ function App() {
       const content = data.content
   
       if (parseInt(username) == parseInt(data.remoteId)){
-        if (data.type === 'KEY_PRESS') {
+        if (data.type === 'KEY_PRESS' && allowKeyboard) {
           var key = JSON.parse(content)
-    
           window.electron.ipcRenderer.send("KEY_PRESS", {key: key});
         }
         if (data.type === 'MOUSE_CLICK') {
           window.electron.ipcRenderer.send("MOUSE_CLICK", {});
-
         }
         if (data.type === 'RIGHT_CLICK') {
           window.electron.ipcRenderer.send("RIGHT_CLICK", {});
-
         }
         if (data.type === 'DOUBLE_CLICK') {
           window.electron.ipcRenderer.send("DOUBLE_CLICK", {});
-
         }
         if (data.type === 'MOUSE_MOVE') {
           var mouseMovement = JSON.parse(content)
-  
+
           const {
             displaySize: { width, height }
           } = clientSelectedScreen
@@ -526,14 +524,7 @@ function App() {
       );
     }
   };
-
-  // // Handle dragging over the drop zone
-  // const handleDragOver = (event) => {
-  //   if(isRemoting) {    
-  //     event.preventDefault(); // Necessary to allow dropping
-  //   }
-  // };
-
+  
   // Handle the drop event
   const handleDrop = async (event) => {
     if(isRemoting) {    
@@ -564,6 +555,12 @@ function App() {
     }
   };
 
+  function toggleAllowKeyboard() {
+    allowKeyboard = !allowKeyboard
+    if(allowKeyboardButtonRef.current){
+      allowKeyboardButtonRef.current.innerText = allowKeyboard ? 'Disable keyboard' : 'Enable keyboard';
+    }
+  }
   return (
     <div className="App">
       <>
@@ -573,6 +570,8 @@ function App() {
           <button style={styles.button} onClick={joinRoom} >Join Room</button>
           <input style={styles.button} type="text" id="remoteid" name="remoteid" required placeholder='Remote ID'></input>
           <button style={styles.button} onClick={newRemoteFeed} >Remote control</button>
+          <button style={styles.button} onClick={toggleAllowKeyboard} ref={allowKeyboardButtonRef}>Enable keyboard</button>
+
       </div>
 
         <div
