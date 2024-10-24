@@ -125,6 +125,14 @@ function App() {
           window.electron.ipcRenderer.send("MOUSE_CLICK", {});
 
         }
+        if (data.type === 'RIGHT_CLICK') {
+          window.electron.ipcRenderer.send("RIGHT_CLICK", {});
+
+        }
+        if (data.type === 'DOUBLE_CLICK') {
+          window.electron.ipcRenderer.send("DOUBLE_CLICK", {});
+
+        }
         if (data.type === 'MOUSE_MOVE') {
           var mouseMovement = JSON.parse(content)
   
@@ -377,13 +385,53 @@ function App() {
     });
   }, []);
 
-    const handleMouseClick = async () => {
+  const handleMouseClick = async () => {
     if(isRemoting) {
       console.log("clicked")
       // socket.emit('mouse_click', {})
 
       var message = {
         type: "MOUSE_CLICK",
+        remoteId: remoteId,
+        content: JSON.stringify({}),
+      };
+
+      await sendRemoteMessage(
+        JSON.stringify(message),
+        currentRoomId,
+        textroomPlugin
+      );
+    }
+  }
+
+  const handleRightClick = async (event) => {
+    if(isRemoting) {
+      event.preventDefault(); // Prevent the default right-click menu
+      console.log("rightclicked")
+      // socket.emit('mouse_click', {})
+
+      var message = {
+        type: "RIGHT_CLICK",
+        remoteId: remoteId,
+        content: JSON.stringify({}),
+      };
+
+      await sendRemoteMessage(
+        JSON.stringify(message),
+        currentRoomId,
+        textroomPlugin
+      );
+    }
+  }
+
+  const handleDoubleClick = async () => {
+    if(isRemoting) {
+      event.preventDefault(); // Prevent the default right-click menu
+      console.log("doubleclicked")
+      // socket.emit('mouse_click', {})
+
+      var message = {
+        type: "DOUBLE_CLICK",
         remoteId: remoteId,
         content: JSON.stringify({}),
       };
@@ -542,6 +590,8 @@ function App() {
           onMouseDown={handleDragStart}
           // onDrag={handleDragOver}
           onMouseUp={handleDrop}
+          onContextMenu={handleRightClick}
+          onDoubleClick={handleDoubleClick}
         >
           <video style={{
             width: '100%',

@@ -58,12 +58,26 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('KEY_PRESS', (event, data) => {
     console.log('keyTap')
-    robot.keyTap(data.keyCode)
+    try {
+      robot.keyTap(data.key.toLowerCase())
+    } catch (e) {
+      console.log("can't understand key", e)
+    }
   })
   ipcMain.on('MOUSE_CLICK', (event, data) => {
     console.log('mouseClick')
 
     robot.mouseClick('left', false) // true means double-click
+  })
+  ipcMain.on('RIGHT_CLICK', (event, data) => {
+    console.log('rightClick')
+
+    robot.mouseClick('right', false) // true means double-click
+  })
+  ipcMain.on('DOUBLE_CLICK', (event, data) => {
+    console.log('doubleclick')
+
+    robot.mouseClick('left', true) // true means double-click
   })
   ipcMain.on('MOUSE_MOVE', (event, data) => {
     console.log('mouseMove')
