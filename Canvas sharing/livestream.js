@@ -5,7 +5,7 @@ let teacherFeedPlugin = null;
 let remoteCanvasFeedPlugin = null;
 
 let audiobridgePlugin = null;
-let currentRoomId = 1236481923; // Room ID
+// let currentRoomId = 1236481923; // Room ID
 let myDisplay = "User-laptop";
 const server = "ws://143.198.212.46:8188/ws"; // Your Janus server URL
 // let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
@@ -686,3 +686,48 @@ document.getElementById("joinRoom").addEventListener("click", function (event) {
     console.log("This field is required!"); // Alert if the field is empty
   }
 });
+
+function selectQuality() {
+  const quality = document.getElementById("quality").value;
+  console.log("Selected quality:", quality);
+  var changeQuality = {};
+  // Handle quality selection logic here
+  if (quality === "low") {
+    changeQuality = {
+      request: "configure",
+      stream: [
+        {
+          spatial_layer: 0,
+          temporal_layer: 0,
+        },
+      ],
+    };
+  } else if (quality === "medium") {
+    changeQuality = {
+      request: "configure",
+      stream: [
+        {
+          spatial_layer: 1,
+          temporal_layer: 1,
+        },
+      ],
+    };
+  } else if (quality === "high") {
+    changeQuality = {
+      request: "configure",
+      stream: [
+        {
+          spatial_layer: 2,
+          temporal_layer: 2,
+        },
+      ],
+    };
+  }
+
+  if (remoteCanvasFeedPlugin) {
+    remoteCanvasFeedPlugin.send({
+      message: changeQuality,
+      success: function (result) {},
+    });
+  }
+}
