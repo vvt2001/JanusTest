@@ -5,7 +5,7 @@ let teacherFeedPlugin = null;
 let remoteCanvasFeedPlugin = null;
 
 let audiobridgePlugin = null;
-let myRoom = 234234234; // Room ID
+let currentRoomId = 1236481923; // Room ID
 let myDisplay = "User-laptop";
 const server = "ws://143.198.212.46:8188/ws"; // Your Janus server URL
 // let server = "wss://ab.edulive.net:8989/";  // Your Janus server URL
@@ -325,7 +325,7 @@ function attachCanvasPlugin() {
 function canvasJoining() {
   let join = {
     request: "join",
-    room: myRoom,
+    room: currentRoomId,
     ptype: "publisher",
     display: myDisplay,
     id: canvasId,
@@ -359,6 +359,7 @@ async function publishCanvas() {
       let publish = {
         request: "publish",
         videocodec: "vp9",
+        svc: true,
       };
 
       canvasPlugin.send({ message: publish, jsep: jsep });
@@ -405,7 +406,7 @@ function newRemoteFeed(id) {
       subscribers.push(pluginHandle);
       let subscribe = {
         request: "join",
-        room: myRoom,
+        room: currentRoomId,
         ptype: "subscriber",
         streams: [
           {
@@ -423,7 +424,7 @@ function newRemoteFeed(id) {
           jsep: jsep,
           tracks: [{ type: "data" }],
           success: function (jsep) {
-            let body = { request: "start", room: myRoom };
+            let body = { request: "start", room: currentRoomId };
             remotePlugin.send({ message: body, jsep: jsep });
           },
           error: function (error) {
@@ -467,7 +468,7 @@ function newTeacherRemoteFeed(id) {
       subscribers.push(pluginHandle);
       let subscribe = {
         request: "join",
-        room: myRoom,
+        room: currentRoomId,
         ptype: "subscriber",
         streams: [
           {
@@ -485,7 +486,7 @@ function newTeacherRemoteFeed(id) {
           jsep: jsep,
           tracks: [{ type: "data" }],
           success: function (jsep) {
-            let body = { request: "start", room: myRoom };
+            let body = { request: "start", room: currentRoomId };
             teacherFeedPlugin.send({ message: body, jsep: jsep });
           },
           error: function (error) {
@@ -528,7 +529,7 @@ function newCanvasRemoteFeed(id) {
       subscribers.push(pluginHandle);
       let subscribe = {
         request: "join",
-        room: myRoom,
+        room: currentRoomId,
         ptype: "subscriber",
         streams: [
           {
@@ -546,7 +547,7 @@ function newCanvasRemoteFeed(id) {
           jsep: jsep,
           tracks: [{ type: "data" }],
           success: function (jsep) {
-            let body = { request: "start", room: myRoom };
+            let body = { request: "start", room: currentRoomId };
             remoteCanvasFeedPlugin.send({ message: body, jsep: jsep });
           },
           error: function (error) {
@@ -616,7 +617,7 @@ function joinAudioRoom() {
     // Join the audio room
     let register = {
       request: "join",
-      room: myRoom,
+      room: currentRoomId,
       display: username,
       id: parseInt(myId),
     };
@@ -645,9 +646,10 @@ function cleanupRemoteFeed(remoteFeed) {
 document.getElementById("createRoom").addEventListener("click", function () {
   let createVideoRoom = {
     request: "create",
-    room: myRoom,
+    room: currentRoomId,
     publishers: 6,
     videocodec: "vp9",
+    svc: true,
   };
   videoRoomPlugin.send({
     message: createVideoRoom,
@@ -656,7 +658,7 @@ document.getElementById("createRoom").addEventListener("click", function () {
 
   let createAudioBridge = {
     request: "create",
-    room: myRoom,
+    room: currentRoomId,
     description: "My audio room",
     audiolevel_event: true,
   };
@@ -672,7 +674,7 @@ document.getElementById("joinRoom").addEventListener("click", function (event) {
   if (myId) {
     let join = {
       request: "join",
-      room: myRoom,
+      room: currentRoomId,
       ptype: "publisher",
       display: myDisplay,
       id: parseInt(myId),
