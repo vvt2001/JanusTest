@@ -3,20 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Canvas Screen</title>
-    <!-- Include Tailwind CSS or your custom CSS -->
-    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
-    <!-- Include any necessary JavaScript libraries -->
+    <title>Canvas Screen with Cameras</title>
     <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script type="text/javascript" src="AppUtils.js" ></script>
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js" ></script>
-    <script type="text/javascript" src="janus.js" ></script>
-    <script type="text/javascript" src="textroom.js" ></script>
+    <script type="text/javascript" src="AppUtils.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js"></script>
+    <script type="text/javascript" src="file:///android_asset/Whiteboard/janus.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
-    <script type="text/javascript" src="zip.min.js"></script>
 
-    <!-- <script>
+    <script>
         (function() {
             const originalLog = console.log;
             console.log = function(...args) {
@@ -26,8 +20,8 @@
             originalLog.apply(console, args);
             };
         })();
-    </script> -->
-
+    </script>
+    
     <script>
         function loadScript(url, type) {
             return new Promise((resolve, reject) => {
@@ -58,13 +52,13 @@
         
         loadScript(secureLink, null)
             .then(() => {
-                loadScript('scroll_reuse.js', 'text/javascript');
+                loadScript('file:///android_asset/Whiteboard/scroll_reuse.js', 'text/javascript');
             })
             .then(() => {
-                loadScript('whiteboard_init.js', 'text/javascript');
+                loadScript('file:///android_asset/Whiteboard/whiteboard_init.js', 'text/javascript');
             })
             .then(() => {
-                loadScript('exercise_init.js', 'text/javascript');
+                loadScript('file:///android_asset/Whiteboard/exercise_init.js', 'text/javascript');
             })
             .then(() => {
                 console.log('All scripts loaded and ready.');
@@ -79,23 +73,45 @@
         body, html {
             height: 100%;
             margin: 0;
-            overflow: hidden; /* Prevent scrolling */
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+            width: 100%;
         }
-        .canvas-container {
-            width: 100vw;
+        .camera-container {
+            width: 20vw;
             height: 100vh;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
+            background-color: #333;
+            padding: 10px;
+            gap: 10px;
+        }
+        .camera-slot {
+            width: 100%;
+            max-height: calc((100vh - 60px) / 4); /* Shrink to fit within viewport */
+            aspect-ratio: 4 / 3;
+            background-color: #666;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2em;
+        }
+        .main-content {
+            flex-grow: 2;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
             position: relative;
         }
-        canvas {
-            display: block; /* Remove default margin */
-            width: 100%;
-            height: 100%;
-        }
+        /* Whiteboard inner content styling */
         .controls {
-            position: fixed;
+            position: absolute;
             top: 10px;
             left: 10px;
             z-index: 10000;
@@ -107,104 +123,122 @@
         .controls button {
             margin: 5px;
         }
-        .hidden {
-            display: none;
+        /* Styling for the second control tab (camera buttons) */
+        .second-control {
+            position: fixed;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+        }
+        .second-control button {
+            margin: 5px;
+            color: white;
+            background-color: #333;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .canvas-container {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
         #Scrollable {
             height: 100%;
-            overflow-y: auto; /* scrolling */
-            overflow-x: hidden; /* scrolling */
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        #remoteVideoCanvas {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+        
+        #Wrapper {
+            width: 100%; /* w-full */
+            min-height: 100%; /* min-h-full */
+            display: flex;
+            flex-direction: column; /* flex-col */
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Make canvas sections initially hidden, with "hidden" class behavior */
+        #canvas_section_2.hidden,
+        #canvas_section_3.hidden {
+            display: none;
+        }
+        .shadow-sm {
+            height: 100%;
+            width: 100%;
         }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <button id="drawBtn">Draw multi</button>
-        <button id="exitDrawBtn" class="hidden">Exit multi</button>
-        <button id="normalPen" data-thickness="5">Normal Pen multi</button>
-        <button id="highlightPen" data-thickness="10">Highlight Pen multi</button>
-        <button id="createRoom">Create Room</button>
-        <button id="joinRoom">Join Room</button>
-        <input type="file" id="zipFileInput" />
-        <button id="check">Checking</button>
+    <!-- Camera Container -->
+    <div class="camera-container">
+        <video class="camera-slot" id="teacherVideo" autoplay playsinline></video>
+        <video class="camera-slot" id="Video-1" autoplay playsinline></video>
+        <video class="camera-slot" id="Video-2" autoplay playsinline></video>
+        <video class="camera-slot" id="Video-3" autoplay playsinline></video>
+        <audio id="remoteaudio" autoplay playsinline></audio>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Whiteboard controls (Overlay) -->
+        <div class="controls">
+            <button id="publish">Publish</button>
+            <button id="unpublish">Unpublish</button>
+            <button id="mute">Unmute</button>
+            <button id="share-screen">Share screen</button>
+        </div>
+
+        <div class="canvas-container" id="Scrollable">
+            <div id="Wrapper" class="w-full min-h-full flex flex-col justify-center items-center relative">
+                <div class="shadow-sm" id="canvas_section_1" style="position: absolute;">
+                    <canvas id="canvas_view_1"></canvas>
+                </div>
+                <div class="shadow-sm hidden" id="canvas_section_2" style="position: absolute;">
+                    <canvas id="canvas_view_2"></canvas>
+                </div>
+                <div class="shadow-sm hidden" id="canvas_section_3" style="position: absolute;">
+                    <canvas id="canvas_view_3"></canvas>
+                </div>
+            </div>
+        </div>    
+
+        <video id="remoteVideoCanvas" autoplay playsinline style="display: none;"></video> <!-- Hidden video element -->
 
     </div>
-    <div class="w-full h-full flex flex-col justify-center items-center overflow-x-hidden scrollable overflow-y-auto" id="Scrollable">
-        <div id="Wrapper" class="w-full min-h-full scrollable flex flex-col justify-center items-center relative" style="position: relative;">
-            <div class="shadow-sm" id="canvas_section_1" style="position: absolute;">
-                <canvas id="canvas_view_1"></canvas>
-            </div>
-            <div class="shadow-sm hidden" id="canvas_section_2" style="position: absolute;">
-                <canvas id="canvas_view_2"></canvas>
-            </div>
-            <div class="shadow-sm hidden" id="canvas_section_3" style="position: absolute;">
-                <canvas id="canvas_view_3"></canvas>
-            </div>
-        </div>
-    </div>    
 
-    <script>
-        document.getElementById("zipFileInput").addEventListener("change", async function(event) {
-            const file = event.target.files[0];
-            const password1 = 'edulive_secret';
-            const password2 = 'k;v8brV$MSVh4C3*N@H6';
-            if (!file) {
-                console.log("No file selected.");
-                return;
-            }
-
-            try {
-                // Step 2.1: Create a new ZipReader from the file
-                const zipReader = new zip.ZipReader(new zip.BlobReader(file), {password: password2});
-
-                // Step 2.2: Get all entries (files) from the zip file
-                const entries = await zipReader.getEntries();
-
-                if (entries.length === 0) {
-                    console.log("No files in the ZIP archive.");
-                    return;
-                }
-
-                // Step 2.3: Array to hold the content of JSON files
-                let jsonContentArray = [];
-
-                // Step 2.4: Loop through each entry (file) in the ZIP
-                for (let entry of entries) {
-
-                    // Only process files with .json extension
-                    if (entry.filename.endsWith(".json")) {
-
-                        // Step 2.5: Extract file data as text
-                        const text = await entry.getData(new zip.TextWriter());
-                        jsonContentArray.push(text);  // Add file content to the array
-                    }
-                }
-
-                // Step 2.6: Close the ZipReader when done
-                await zipReader.close();
-
-                // Output the JSON content array
-                console.log(jsonContentArray);
-
-                jsonList = jsonContentArray;
-                // Optionally, parse the JSON strings into objects
-                let jsonObjects = jsonContentArray.map(content => JSON.parse(content));
-                console.log("Parsed JSON Objects: ", jsonObjects);
-
-            } catch (error) {
-                console.error("Error reading ZIP file: ", error);
-            }
-
-            await initCanvasScreen();
-        });
-
-    </script>
-
-    <script>
-        document.getElementById('check').addEventListener('click', () => {
-            console.log("checking param", jsonList);
-        });
-    </script>
-    
+    <script type="text/javascript" src="file:///android_asset/Whiteboard/textroom.js" ></script>
+    <script type="text/javascript" src="file:///android_asset/Whiteboard/livestream.js"></script>
 </body>
 </html>

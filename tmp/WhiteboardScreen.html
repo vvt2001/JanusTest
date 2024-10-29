@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Screen</title>
+    <!-- Include Tailwind CSS or your custom CSS -->
+    <!-- <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"> -->
+    <!-- Include any necessary JavaScript libraries -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script type="text/javascript" src="file:///android_asset/Whiteboard/AppUtils.js" ></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/webrtc-adapter/8.2.3/adapter.min.js" ></script>
+    <script type="text/javascript" src="file:///android_asset/Whiteboard/janus.js" ></script>
+    <script type="text/javascript" src="file:///android_asset/Whiteboard/textroom.js" ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+
+    <script>
+        (function() {
+            const originalLog = console.log;
+            console.log = function(...args) {
+            // Send log to React Native
+            window.ReactNativeWebView.postMessage(JSON.stringify(args));
+            // Call the original console.log function as well (optional)
+            originalLog.apply(console, args);
+            };
+        })();
+    </script>
+    <script>
+        function loadScript(url, type) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                if(type != null){
+                    script.type = type; // Set the type attribute
+                }
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error(`Script load error for ${url}`));
+                document.head.appendChild(script);
+            });
+        }
+
+        function buildSecureLink(time = 120) {
+            const secret = 'edulive';
+            const ttl = time * 1000; // Convert to milliseconds
+            const expires = Math.floor(Date.now() / 1000) + ttl / 1000;
+            const md5 = CryptoJS.MD5(`${expires} ${secret}`);
+            let base64 = md5.toString(CryptoJS.enc.Base64);
+            base64 = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+            return `https://resourebeta.edulive.net/edulive_draw/drawlib.js?v=1723372537&md5=${base64}&expires=${expires}`;
+        }
+
+        // Load the primary script first
+        const secureLink = buildSecureLink();
+        
+        loadScript(secureLink, null)
+            .then(() => {
+                loadScript('file:///android_asset/Whiteboard/scroll_reuse.js', 'text/javascript');
+            })
+            .then(() => {
+                loadScript('file:///android_asset/Whiteboard/whiteboard_init.js', 'text/javascript');
+            })
+            .then(() => {
+                loadScript('file:///android_asset/Whiteboard/exercise_init.js', 'text/javascript');
+            })
+            .then(() => {
+                console.log('All scripts loaded and ready.');
+                // Initialize any dependent code here if needed
+            })
+            .catch(error => {
+                console.error('Failed to load scripts:', error);
+            });
+            
+    </script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        .canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        canvas {
+            display: block; /* Remove default margin */
+            width: 100%;
+            height: 100%;
+        }
+        .controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 10000;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+        }
+        .controls button {
+            margin: 5px;
+        }
+        .hidden {
+            display: none;
+        }
+        #Scrollable {
+            height: 100%;
+            overflow-y: auto; /* scrolling */
+            overflow-x: hidden; /* scrolling */
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button id="drawBtn">Draw multi</button>
+        <button id="exitDrawBtn" class="hidden">Exit multi</button>
+        <button id="normalPen" data-thickness="5">Normal Pen multi</button>
+        <button id="highlightPen" data-thickness="10">Highlight Pen multi</button>
+        <button id="createRoom">Create Room</button>
+        <button id="joinRoom">Join Room</button>
+        <button id="check">Checking</button>
+    </div>
+    <div class="w-full h-full flex flex-col justify-center items-center overflow-x-hidden scrollable overflow-y-auto" id="Scrollable">
+        <div id="Wrapper" class="w-full min-h-full scrollable flex flex-col justify-center items-center relative" style="position: relative;">
+            <div class="shadow-sm" id="canvas_section_1" style="position: absolute;">
+                <canvas id="canvas_view_1"></canvas>
+            </div>
+            <div class="shadow-sm hidden" id="canvas_section_2" style="position: absolute;">
+                <canvas id="canvas_view_2"></canvas>
+            </div>
+            <div class="shadow-sm hidden" id="canvas_section_3" style="position: absolute;">
+                <canvas id="canvas_view_3"></canvas>
+            </div>
+        </div>
+    </div>    
+
+    <script>
+        document.getElementById('check').addEventListener('click', () => {
+            console.log("checking param");
+            window.ReactNativeWebView.postMessage(jsonList);
+        });
+    </script>
+    
+</body>
+</html>
